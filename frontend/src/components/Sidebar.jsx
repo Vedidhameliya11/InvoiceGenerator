@@ -6,13 +6,15 @@ const ALL_MENU_ITEMS = [
   { key: "history", label: "History", icon: "🕒" },
   { key: "templates", label: "Templates", icon: "📄" },
   { key: "shops", label: "Manage Shops", icon: "🏬" },
+  { key: "profile", label: "Edit Profile", icon: "👤" },
 ];
 
 // Admin manages the platform: overview, shop onboarding/approval, and
-// templates. Regular shop users create/track their own invoices.
+// templates. Regular shop users create/track their own invoices and
+// can edit their own profile.
 const ROLE_MENUS = {
   admin: ["dashboard", "shops", "templates"],
-  user: ["dashboard", "add", "history", "templates"],
+  user: ["dashboard", "add", "history", "templates", "profile"],
 };
 
 export default function Sidebar({ activeTab, setActiveTab, role }) {

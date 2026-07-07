@@ -6,6 +6,7 @@ import AddInvoice from "./AddInvoice";
 import History from "./History";
 import Templates from "./Templates";
 import ManageShops from "./ManageShops";
+import EditProfile from "./EditProfile";
 
 import "./Dashboard.css";
 
@@ -32,6 +33,7 @@ export default function Dashboard({ onLogout, role = "user" }) {
           {!isAdmin && activeTab === "history" && <History />}
           {activeTab === "templates" && <Templates />}
           {isAdmin && activeTab === "shops" && <ManageShops />}
+          {!isAdmin && activeTab === "profile" && <EditProfile />}
         </div>
       </div>
     </div>

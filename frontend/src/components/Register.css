@@ -127,3 +127,25 @@
 .signup-btn:hover {
   text-decoration: underline;
 }
+
+.signup-row {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.signup-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 0;
+}
+
+.signup-btn:hover {
+  text-decoration: underline;
+}

@@ -215,6 +215,47 @@ async def approve_shop(shop_id: str):
     return await approve_shop_doc(oid)
 
 
+class ShopProfileUpdateIn(BaseModel):
+    owner_name: str
+    email: EmailStr
+    shop_name: str
+
+
+@router.put("/shop-profile/{shop_id}", response_model=ShopOut)
+async def update_shop_profile(shop_id: str, payload: ShopProfileUpdateIn):
+    """Self-service profile update for a logged-in shop owner. Only
+    owner_name, email, and shop_name are editable here — contact_no and
+    shop_address are display-only on this form."""
+    try:
+        oid = ObjectId(shop_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid shop id")
+
+    doc = await db.shops.find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    new_email = payload.email.strip().lower()
+
+    # Prevent accidentally colliding with another shop's email.
+    if new_email != doc["email"]:
+        existing = await db.shops.find_one({"email": new_email})
+        if existing and str(existing["_id"]) != shop_id:
+            raise HTTPException(status_code=409, detail="That email is already in use by another account.")
+
+    await db.shops.update_one(
+        {"_id": oid},
+        {"$set": {
+            "owner_name": payload.owner_name,
+            "email": new_email,
+            "shop_name": payload.shop_name,
+        }},
+    )
+
+    updated = await db.shops.find_one({"_id": oid})
+    return serialize(updated)
+
+
 @router.delete("/admin/shops/{shop_id}")
 async def delete_shop(shop_id: str):
     try:

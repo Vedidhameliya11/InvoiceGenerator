@@ -8,13 +8,13 @@ import Dashboard from "./components/Dashboard";
 
 function App() {
   // If the user already has an active session (e.g. page refresh),
-  // skip straight to the dashboard instead of showing Login again.
+  // skip straight to the dashboard instead of showing Register again.
   const [step, setStep] = useState(() =>
     localStorage.getItem("loggedIn") === "true" ? "dashboard" : "register"
   );
 
   // 🔒 Trap the browser Back button: once logged in, pressing Back
-  // should NOT reveal the Login page again.
+  // should NOT reveal the Register/Login page again.
   useEffect(() => {
     // Seed a history entry so there's something for "Back" to hit.
     window.history.pushState({ app: true }, "", window.location.href);
