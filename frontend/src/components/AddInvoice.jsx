@@ -48,7 +48,7 @@ export default function AddInvoice() {
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [addCustomerError, setAddCustomerError] = useState("");
 
-  const shopUser = JSON.parse(localStorage.getItem("shopUser") || "null");
+  const shopUser = JSON.parse(localStorage.getItem("shop") || "null");
   const shopId = shopUser?.id;
 
   // Debounced lookup: whenever the typed customer name settles, ask the
