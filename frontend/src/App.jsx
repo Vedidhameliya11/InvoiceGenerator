@@ -7,21 +7,22 @@ import PendingApproval from "./components/PendingApproval";
 import Dashboard from "./components/Dashboard";
 
 function App() {
-  // If the user already has an active session (e.g. page refresh),
-  // skip straight to the dashboard instead of showing Register again.
-  const [step, setStep] = useState(() =>
-    localStorage.getItem("loggedIn") === "true" ? "dashboard" : "register"
-  );
+  const [step, setStep] = useState(() => {
+    if (localStorage.getItem("loggedIn") === "true") return "dashboard";
+    if (localStorage.getItem("regPending") === "true") return "pending";
+    return "register";
+  });
 
-  // 🔒 Trap the browser Back button: once logged in, pressing Back
-  // should NOT reveal the Register/Login page again.
+  const [shopUser, setShopUser] = useState(() => {
+    const stored = localStorage.getItem("shopUser");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   useEffect(() => {
-    // Seed a history entry so there's something for "Back" to hit.
     window.history.pushState({ app: true }, "", window.location.href);
 
     const handlePopState = () => {
       if (localStorage.getItem("loggedIn") === "true") {
-        // Cancel the back navigation by pushing forward again.
         window.history.pushState({ app: true }, "", window.location.href);
         setStep("dashboard");
       }
@@ -34,6 +35,12 @@ function App() {
   const handleLoginSuccess = (loginData) => {
     localStorage.setItem("loggedIn", "true");
     localStorage.setItem("role", loginData?.role || "user");
+    if (loginData?.shop) {
+      localStorage.setItem("shopUser", JSON.stringify(loginData.shop));
+      setShopUser(loginData.shop);
+    }
+    localStorage.removeItem("regPending");
+    localStorage.removeItem("shop");
     window.history.pushState({ app: true }, "", window.location.href);
     setStep("dashboard");
   };
@@ -41,10 +48,11 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("role");
-    setStep("register");
+    localStorage.removeItem("shopUser");
+    setShopUser(null);
+    setStep("login");
   };
 
-  // 🔥 AUTH FLOW CONTROL
   if (step === "login") {
     return (
       <Login
@@ -57,21 +65,35 @@ function App() {
   if (step === "register") {
     return (
       <Register
-        onRegister={() => setStep("pending")}
+        onRegister={() => {
+          localStorage.setItem("regPending", "true");
+          setStep("pending");
+        }}
         onLoginClick={() => setStep("login")}
       />
     );
   }
 
   if (step === "pending") {
-    return <PendingApproval />;
+    return (
+      <PendingApproval
+        onBackToLogin={() => {
+          localStorage.removeItem("regPending");
+          setStep("login");
+        }}
+      />
+    );
   }
 
-  // 🔥 DEFAULT PAGE AFTER LOGIN
   return (
     <Dashboard
       onLogout={handleLogout}
       role={localStorage.getItem("role") || "user"}
+      shopUser={shopUser}
+      onShopUpdated={(updated) => {
+        localStorage.setItem("shopUser", JSON.stringify(updated));
+        setShopUser(updated);
+      }}
     />
   );
 }

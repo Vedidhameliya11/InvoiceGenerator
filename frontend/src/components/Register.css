@@ -149,3 +149,25 @@
 .signup-btn:hover {
   text-decoration: underline;
 }
+
+.login-row {
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.login-link-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 0;
+}
+
+.login-link-btn:hover {
+  text-decoration: underline;
+}

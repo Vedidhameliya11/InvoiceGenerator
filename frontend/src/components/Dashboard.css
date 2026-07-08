@@ -20,6 +20,29 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-btn {
+  width: auto;
+  margin-top: 0;
+  background: #eef2ff;
+  color: #4338ca;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.profile-btn:hover {
+  background: #e0e7ff;
+}
+
 .logout-btn {
   width: auto;
   margin-top: 0;

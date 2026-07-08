@@ -34,6 +34,108 @@ export default function AddInvoice() {
     color: "#2563eb",
   });
 
+  // Customer lookup: does this customer name already exist for this shop?
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerContactNo, setCustomerContactNo] = useState("");
+  const [customerFound, setCustomerFound] = useState(false);
+  const [customerChecked, setCustomerChecked] = useState(false);
+  const [checkingCustomer, setCheckingCustomer] = useState(false);
+
+  // "+ Add New Customer" popup
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomerAddress, setNewCustomerAddress] = useState("");
+  const [newCustomerContact, setNewCustomerContact] = useState("");
+  const [savingCustomer, setSavingCustomer] = useState(false);
+  const [addCustomerError, setAddCustomerError] = useState("");
+
+  const shopUser = JSON.parse(localStorage.getItem("shopUser") || "null");
+  const shopId = shopUser?.id;
+
+  // Debounced lookup: whenever the typed customer name settles, ask the
+  // backend if a customer with that name already exists for this shop.
+  useEffect(() => {
+    const name = formData.customerName.trim();
+
+    if (!name || !shopId) {
+      setCustomerFound(false);
+      setCustomerChecked(false);
+      setCustomerAddress("");
+      setCustomerContactNo("");
+      return;
+    }
+
+    setCheckingCustomer(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/customers/lookup`, {
+          params: { shop_id: shopId, name },
+        });
+
+        if (res.data.found) {
+          setCustomerFound(true);
+          setCustomerAddress(res.data.customer.address || "");
+          setCustomerContactNo(res.data.customer.contact_no || "");
+        } else {
+          setCustomerFound(false);
+          setCustomerAddress("");
+          setCustomerContactNo("");
+        }
+        setCustomerChecked(true);
+      } catch (err) {
+        console.error("Customer lookup failed:", err);
+        setCustomerChecked(false);
+      } finally {
+        setCheckingCustomer(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.customerName, shopId]);
+
+  const openAddCustomer = () => {
+    setNewCustomerAddress("");
+    setNewCustomerContact("");
+    setAddCustomerError("");
+    setShowAddCustomer(true);
+  };
+
+  const handleSaveNewCustomer = async (e) => {
+    e.preventDefault();
+    setAddCustomerError("");
+
+    const name = formData.customerName.trim();
+    if (!name) {
+      setAddCustomerError("Customer name can't be empty.");
+      return;
+    }
+    if (!shopId) {
+      setAddCustomerError("Couldn't identify your shop. Please log in again.");
+      return;
+    }
+
+    setSavingCustomer(true);
+    try {
+      const res = await axios.post(`${API_BASE}/customers`, {
+        shop_id: shopId,
+        name,
+        address: newCustomerAddress.trim(),
+        contact_no: newCustomerContact.trim(),
+      });
+
+      setCustomerAddress(res.data.address || "");
+      setCustomerContactNo(res.data.contact_no || "");
+      setCustomerFound(true);
+      setCustomerChecked(true);
+      setShowAddCustomer(false);
+    } catch (err) {
+      setAddCustomerError(
+        err?.response?.data?.detail || "Something went wrong saving this customer."
+      );
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
   // Pull templates created in the Templates section, showing only the
   // free + active ones here (paid templates are excluded from Add Invoice).
   useEffect(() => {
@@ -156,6 +258,36 @@ export default function AddInvoice() {
           required
         />
 
+        {formData.customerName.trim() && (
+          <div className="customer-status">
+            {checkingCustomer && (
+              <p className="customer-checking">Checking existing customers…</p>
+            )}
+
+            {!checkingCustomer && customerChecked && customerFound && (
+              <div className="customer-found">
+                <p>✅ Existing customer — details auto-filled</p>
+                <p className="customer-detail">
+                  <strong>Address:</strong> {customerAddress || "—"}
+                </p>
+                <p className="customer-detail">
+                  <strong>Contact:</strong> {customerContactNo || "—"}
+                </p>
+              </div>
+            )}
+
+            {!checkingCustomer && customerChecked && !customerFound && (
+              <button
+                type="button"
+                className="add-customer-btn"
+                onClick={openAddCustomer}
+              >
+                + Add New Customer
+              </button>
+            )}
+          </div>
+        )}
+
         <input
           type="text"
           name="productName"
@@ -237,6 +369,67 @@ export default function AddInvoice() {
               color={formData.color}
               font={fontCss(formData.font)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* ADD NEW CUSTOMER MODAL */}
+      {showAddCustomer && (
+        <div className="preview-wrapper">
+          <div className="add-customer-box">
+            <div className="add-customer-header">
+              <h3>Add New Customer</h3>
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowAddCustomer(false)}
+              >
+                ✖
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNewCustomer}>
+              <label className="field-label">Customer Name</label>
+              <input type="text" value={formData.customerName} disabled />
+
+              <label className="field-label">Address</label>
+              <input
+                type="text"
+                placeholder="Customer Address"
+                value={newCustomerAddress}
+                onChange={(e) => setNewCustomerAddress(e.target.value)}
+              />
+
+              <label className="field-label">Contact No.</label>
+              <input
+                type="text"
+                placeholder="Customer Contact Number"
+                value={newCustomerContact}
+                onChange={(e) => setNewCustomerContact(e.target.value)}
+              />
+
+              {addCustomerError && (
+                <p className="add-customer-error">{addCustomerError}</p>
+              )}
+
+              <div className="add-customer-actions">
+                <button
+                  type="button"
+                  className="add-customer-cancel"
+                  onClick={() => setShowAddCustomer(false)}
+                  disabled={savingCustomer}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="add-customer-save"
+                  disabled={savingCustomer}
+                >
+                  {savingCustomer ? "Saving..." : "Save Customer"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

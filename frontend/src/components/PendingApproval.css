@@ -41,3 +41,19 @@
   font-weight: 500;
   margin-top: 15px;
 }
+
+.pending-login-btn {
+  margin-top: 22px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pending-login-btn:hover {
+  background: #1d4ed8;
+}

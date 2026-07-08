@@ -10,8 +10,9 @@ import EditProfile from "./EditProfile";
 
 import "./Dashboard.css";
 
-export default function Dashboard({ onLogout, role = "user" }) {
+export default function Dashboard({ onLogout, role = "user", shopUser = null, onShopUpdated }) {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [showProfile, setShowProfile] = useState(false);
 
   const isAdmin = role === "admin";
 
@@ -22,9 +23,21 @@ export default function Dashboard({ onLogout, role = "user" }) {
       <div className="dashboard-main">
         <div className="dashboard-topbar">
           <div />
-          <button className="logout-btn" onClick={onLogout}>
-            Logout
-          </button>
+          <div className="topbar-actions">
+            {!isAdmin && (
+              <button
+                type="button"
+                className="profile-btn"
+                title="Edit Profile"
+                onClick={() => setShowProfile(true)}
+              >
+                👤 Profile
+              </button>
+            )}
+            <button className="logout-btn" onClick={onLogout}>
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="dashboard-content">
@@ -33,9 +46,18 @@ export default function Dashboard({ onLogout, role = "user" }) {
           {!isAdmin && activeTab === "history" && <History />}
           {activeTab === "templates" && <Templates />}
           {isAdmin && activeTab === "shops" && <ManageShops />}
-          {!isAdmin && activeTab === "profile" && <EditProfile />}
         </div>
       </div>
+
+      {showProfile && !isAdmin && (
+        <EditProfile
+          shop={shopUser}
+          onClose={() => setShowProfile(false)}
+          onUpdated={(updated) => {
+            if (onShopUpdated) onShopUpdated(updated);
+          }}
+        />
+      )}
     </div>
   );
 }
