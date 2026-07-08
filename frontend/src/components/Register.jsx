@@ -87,17 +87,6 @@ export default function Register({ onRegister, onLoginClick }) {
 
         <h2>Registration</h2>
 
-        <div className="login-row">
-          <span>Already have an account?</span>
-          <button
-            type="button"
-            className="login-link-btn"
-            onClick={onLoginClick}
-          >
-            Login
-          </button>
-        </div>
-
         <form onSubmit={handleSubmit}>
 
           <input
@@ -193,6 +182,17 @@ export default function Register({ onRegister, onLoginClick }) {
           </button>
 
         </form>
+
+        <div className="login-row">
+          <span>Already have an account?</span>
+          <button
+            type="button"
+            className="login-link-btn"
+            onClick={onLoginClick}
+          >
+            Login
+          </button>
+        </div>
 
       </div>
     </div>
