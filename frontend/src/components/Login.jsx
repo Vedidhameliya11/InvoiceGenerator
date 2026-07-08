@@ -39,7 +39,7 @@ export default function Login({ onLogin, onSignUp }) {
 
       if (res.data.status === "success") {
         setLoading(false);
-        if (onLogin) onLogin({ ...formData, role: "admin" });
+        if (onLogin) onLogin({ role: "admin" });
         return;
       }
     } catch (err) {
@@ -55,28 +55,21 @@ export default function Login({ onLogin, onSignUp }) {
 
     // 2. Check against real, approved shop accounts.
     try {
-      const res = await axios.post(`${API_BASE}/shop-login`, {
+      const res = await axios.post(`${API_BASE}/login`, {
         email: formData.identifier,
         password: formData.password,
       });
 
+      setLoading(false);
       if (res.data.status === "success") {
-        setLoading(false);
-        localStorage.setItem("shop", JSON.stringify(res.data.shop));
-        if (onLogin) onLogin({ ...formData, role: "user" });
-        return;
+        onLogin({ role: "user", shop: res.data.shop });
       }
     } catch (err) {
       setLoading(false);
       setError(
         err.response?.data?.detail || "Invalid email or password."
       );
-      return;
     }
-
-    // Should not normally reach here, but fail closed just in case.
-    setLoading(false);
-    setError("Invalid email or password.");
   };
 
   return (
