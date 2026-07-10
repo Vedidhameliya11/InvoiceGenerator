@@ -81,11 +81,12 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
   return (
     <div className="edit-profile-overlay" onClick={onClose}>
       <div className="edit-profile-box" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="edit-profile-close" onClick={onClose}>
+          ✕
+        </button>
+
         <div className="edit-profile-header">
           <h2>Edit Profile</h2>
-          <button type="button" className="edit-profile-close" onClick={onClose}>
-            ✕
-          </button>
         </div>
 
         {loading ? (

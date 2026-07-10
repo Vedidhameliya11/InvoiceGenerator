@@ -16,9 +16,20 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
 
   const isAdmin = role === "admin";
 
+  // The sidebar has a "profile" item, but Edit Profile is a modal, not a
+  // page — so intercept that one tab and open the modal instead of
+  // switching to a tab that dashboard-content has nothing to render for.
+  const handleTabChange = (tab) => {
+    if (tab === "profile") {
+      setShowProfile(true);
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   return (
     <div className="dashboard-layout">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} role={role} />
+      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} role={role} />
 
       <div className="dashboard-main">
         <div className="dashboard-topbar">
