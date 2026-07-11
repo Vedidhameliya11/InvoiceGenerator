@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import axios from "axios";
 import { API_BASE } from "../config";
 import "./EditProfile.css";
@@ -78,7 +79,7 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="edit-profile-overlay" onClick={onClose}>
       <div className="edit-profile-box" onClick={(e) => e.stopPropagation()}>
         <button type="button" className="edit-profile-close" onClick={onClose}>
@@ -140,6 +141,7 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
