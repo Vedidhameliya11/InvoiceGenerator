@@ -1,8 +1,10 @@
 function MinimalPreview({ data, color, font }) {
 
-  const total =
-    (Number(data.productPrice) || 0) *
-    (Number(data.productQuantity) || 0);
+  const items = data.items || [];
+  const total = items.reduce(
+    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
+    0
+  );
 
   const style = {
     "--tpl-color": color || "#000000",
@@ -20,11 +22,27 @@ function MinimalPreview({ data, color, font }) {
 
       <hr />
 
-      <p>Product : {data.productName}</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th>Total</th>
+          </tr>
+        </thead>
 
-      <p>Price : ₹{data.productPrice}</p>
-
-      <p>Quantity : {data.productQuantity}</p>
+        <tbody>
+          {items.map((it, i) => (
+            <tr key={i}>
+              <td>{it.name}</td>
+              <td>₹{it.price}</td>
+              <td>{it.quantity}</td>
+              <td>₹{(Number(it.price) || 0) * (Number(it.quantity) || 0)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       <hr />
 

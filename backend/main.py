@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 from templates import (
     generate_classic,
@@ -22,10 +22,6 @@ app = FastAPI()
 
 import os
 
-# Comma-separated list of allowed frontend origins. Locally this defaults
-# to your Vite dev server ports. In production (Vercel), set
-# ALLOWED_ORIGINS in the backend project's Environment Variables to your
-# deployed frontend URL, e.g. https://your-frontend-project.vercel.app
 default_origins = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
 allowed_origins = os.getenv("ALLOWED_ORIGINS", default_origins).split(",")
 
@@ -44,12 +40,16 @@ app.include_router(customers_router)
 app.include_router(products_router)
 
 
+class InvoiceItem(BaseModel):
+    name: str
+    price: float
+    quantity: int
+
+
 class Invoice(BaseModel):
     organizationName: str
     customerName: str
-    productName: str
-    productPrice: float
-    productQuantity: int
+    items: List[InvoiceItem] = Field(..., min_length=1)
     template: str
     font: Optional[str] = "Helvetica"
     color: Optional[str] = "#2563EB"

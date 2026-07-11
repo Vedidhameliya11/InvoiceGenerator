@@ -17,6 +17,8 @@ const FONT_CSS = {
 
 const fontCss = (value) => FONT_CSS[value] || FONT_CSS.Helvetica;
 
+const emptyItem = () => ({ name: "", price: "", quantity: "" });
+
 export default function AddInvoice() {
   const [showPreview, setShowPreview] = useState(false);
 
@@ -26,9 +28,7 @@ export default function AddInvoice() {
   const [formData, setFormData] = useState({
     organizationName: "",
     customerName: "",
-    productName: "",
-    productPrice: "",
-    productQuantity: "",
+    items: [emptyItem()],
     template: "",
     font: "Helvetica",
     color: "#2563eb",
@@ -48,8 +48,27 @@ export default function AddInvoice() {
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [addCustomerError, setAddCustomerError] = useState("");
 
+  // Product catalog (from the Products page) — used to suggest names and
+  // auto-fill price when a shop owner types an existing product's name.
+  const [catalogProducts, setCatalogProducts] = useState([]);
+
   const shopUser = JSON.parse(localStorage.getItem("shopUser") || "null");
   const shopId = shopUser?.id;
+
+  useEffect(() => {
+    const fetchCatalog = async () => {
+      if (!shopId) return;
+      try {
+        const res = await axios.get(`${API_BASE}/products`, {
+          params: { shop_id: shopId },
+        });
+        setCatalogProducts(res.data);
+      } catch (err) {
+        console.error("Failed to load product catalog:", err);
+      }
+    };
+    fetchCatalog();
+  }, [shopId]);
 
   // Debounced lookup: whenever the typed customer name settles, ask the
   // backend if a customer with that name already exists for this shop.
@@ -158,7 +177,7 @@ export default function AddInvoice() {
     fetchTemplates();
   }, []);
 
-  // 🔥 Handle input changes
+  // 🔥 Handle top-level input changes (organization / customer name)
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -166,6 +185,40 @@ export default function AddInvoice() {
     });
 
     setShowPreview(false);
+  };
+
+  // Update a single field of a single product row
+  const handleItemChange = (index, field, value) => {
+    setFormData((prev) => {
+      const items = [...prev.items];
+      const current = { ...items[index], [field]: value };
+
+      // If they just typed/selected a product name that exactly matches
+      // something in the catalog, and price is still empty, auto-fill it.
+      if (field === "name") {
+        const match = catalogProducts.find(
+          (p) => p.name.trim().toLowerCase() === value.trim().toLowerCase()
+        );
+        if (match && !current.price) {
+          current.price = String(match.price);
+        }
+      }
+
+      items[index] = current;
+      return { ...prev, items };
+    });
+    setShowPreview(false);
+  };
+
+  const addItemRow = () => {
+    setFormData((prev) => ({ ...prev, items: [...prev.items, emptyItem()] }));
+  };
+
+  const removeItemRow = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
   };
 
   // Picking a template radio pulls in that specific template's
@@ -182,11 +235,12 @@ export default function AddInvoice() {
   };
 
   // Save a record of this invoice so it shows up under History
-  const saveToHistory = (data) => {
+  const saveToHistory = (data, grandTotal) => {
     const existing = JSON.parse(localStorage.getItem("invoiceHistory")) || [];
 
     const record = {
       ...data,
+      grandTotal,
       id: Date.now(),
       generatedAt: new Date().toISOString(),
     };
@@ -197,14 +251,41 @@ export default function AddInvoice() {
     );
   };
 
+  const grandTotal = formData.items.reduce(
+    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
+    0
+  );
+
   // 🔥 Generate PDF
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    const cleanItems = formData.items
+      .map((it) => ({
+        name: it.name.trim(),
+        price: Number(it.price) || 0,
+        quantity: Number(it.quantity) || 0,
+      }))
+      .filter((it) => it.name);
+
+    if (cleanItems.length === 0) {
+      alert("Please add at least one product with a name.");
+      return;
+    }
+
+    const payload = {
+      organizationName: formData.organizationName,
+      customerName: formData.customerName,
+      items: cleanItems,
+      template: formData.template,
+      font: formData.font,
+      color: formData.color,
+    };
+
     try {
       const response = await axios.post(
         `${API_BASE}/generate-pdf`,
-        formData,
+        payload,
         { responseType: "blob" }
       );
 
@@ -218,7 +299,8 @@ export default function AddInvoice() {
       link.click();
       link.remove();
 
-      saveToHistory(formData);
+      const total = cleanItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+      saveToHistory(payload, total);
     } catch (error) {
       alert("Something went wrong!");
     }
@@ -238,6 +320,12 @@ export default function AddInvoice() {
   return (
     <div className="container">
       <h1>Invoice Generator</h1>
+
+      <datalist id="catalog-product-names">
+        {catalogProducts.map((p) => (
+          <option key={p.id} value={p.name} />
+        ))}
+      </datalist>
 
       <form onSubmit={handleSubmit} className="form">
         <input
@@ -288,32 +376,77 @@ export default function AddInvoice() {
           </div>
         )}
 
-        <input
-          type="text"
-          name="productName"
-          placeholder="Product Name"
-          value={formData.productName}
-          onChange={handleChange}
-          required
-        />
+        {/* MULTIPLE PRODUCTS */}
+        <div className="items-section">
+          <h3>Products</h3>
 
-        <input
-          type="number"
-          name="productPrice"
-          placeholder="Product Price"
-          value={formData.productPrice}
-          onChange={handleChange}
-          required
-        />
+          {formData.items.map((item, index) => {
+            const lineTotal =
+              (Number(item.price) || 0) * (Number(item.quantity) || 0);
 
-        <input
-          type="number"
-          name="productQuantity"
-          placeholder="Product Quantity"
-          value={formData.productQuantity}
-          onChange={handleChange}
-          required
-        />
+            return (
+              <div className="item-row" key={index}>
+                <input
+                  type="text"
+                  placeholder="Product Name"
+                  list="catalog-product-names"
+                  value={item.name}
+                  onChange={(e) =>
+                    handleItemChange(index, "name", e.target.value)
+                  }
+                  required
+                />
+
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Price"
+                  value={item.price}
+                  onChange={(e) =>
+                    handleItemChange(index, "price", e.target.value)
+                  }
+                  required
+                />
+
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Qty"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    handleItemChange(index, "quantity", e.target.value)
+                  }
+                  required
+                />
+
+                <span className="item-row-total">₹{lineTotal.toFixed(2)}</span>
+
+                <button
+                  type="button"
+                  className="item-remove-btn"
+                  onClick={() => removeItemRow(index)}
+                  disabled={formData.items.length === 1}
+                  title={
+                    formData.items.length === 1
+                      ? "At least one product is required"
+                      : "Remove this product"
+                  }
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+
+          <button type="button" className="add-item-btn" onClick={addItemRow}>
+            + Add Another Product
+          </button>
+
+          <div className="items-grand-total">
+            Grand Total: ₹{grandTotal.toFixed(2)}
+          </div>
+        </div>
 
         {/* TEMPLATE */}
         <div className="template-section">

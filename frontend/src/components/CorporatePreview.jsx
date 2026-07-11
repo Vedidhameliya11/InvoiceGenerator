@@ -1,7 +1,9 @@
 function CorporatePreview({ data, color, font }) {
-  const total =
-    (Number(data.productPrice) || 0) *
-    (Number(data.productQuantity) || 0);
+  const items = data.items || [];
+  const total = items.reduce(
+    (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
+    0
+  );
 
   const style = {
     "--tpl-color": color || "#374151",
@@ -40,12 +42,14 @@ function CorporatePreview({ data, color, font }) {
           </thead>
 
           <tbody>
-            <tr>
-              <td>{data.productName}</td>
-              <td>₹{data.productPrice}</td>
-              <td>{data.productQuantity}</td>
-              <td>₹{total}</td>
-            </tr>
+            {items.map((it, i) => (
+              <tr key={i}>
+                <td>{it.name}</td>
+                <td>₹{it.price}</td>
+                <td>{it.quantity}</td>
+                <td>₹{(Number(it.price) || 0) * (Number(it.quantity) || 0)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
 

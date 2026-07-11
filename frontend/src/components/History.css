@@ -69,3 +69,10 @@
 .template-cell {
   text-transform: capitalize;
 }
+
+.history-products-cell {
+  white-space: normal;
+  font-size: 13px;
+  color: #374151;
+  min-width: 180px;
+}

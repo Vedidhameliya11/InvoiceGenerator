@@ -9,6 +9,31 @@ export default function History() {
     setInvoices(stored);
   }, []);
 
+  // Older history records (before multiple products were supported) had
+  // productName/productPrice/productQuantity directly on the record
+  // instead of an `items` array — normalize both shapes here.
+  const getItems = (inv) => {
+    if (inv.items && inv.items.length) return inv.items;
+    if (inv.productName) {
+      return [
+        {
+          name: inv.productName,
+          price: inv.productPrice,
+          quantity: inv.productQuantity,
+        },
+      ];
+    }
+    return [];
+  };
+
+  const getTotal = (inv) => {
+    if (typeof inv.grandTotal === "number") return inv.grandTotal;
+    return getItems(inv).reduce(
+      (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
+      0
+    );
+  };
+
   return (
     <div className="history-container">
       <div className="history-header">
@@ -26,25 +51,32 @@ export default function History() {
               <tr>
                 <th>Organization</th>
                 <th>Customer</th>
-                <th>Product</th>
-                <th>Price</th>
-                <th>Qty</th>
+                <th>Products</th>
+                <th>Grand Total</th>
                 <th>Template</th>
                 <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              {invoices.map((inv) => (
-                <tr key={inv.id}>
-                  <td>{inv.organizationName}</td>
-                  <td>{inv.customerName}</td>
-                  <td>{inv.productName}</td>
-                  <td>{inv.productPrice}</td>
-                  <td>{inv.productQuantity}</td>
-                  <td className="template-cell">{inv.template}</td>
-                  <td>{new Date(inv.generatedAt).toLocaleString()}</td>
-                </tr>
-              ))}
+              {invoices.map((inv) => {
+                const items = getItems(inv);
+                return (
+                  <tr key={inv.id}>
+                    <td>{inv.organizationName}</td>
+                    <td>{inv.customerName}</td>
+                    <td className="history-products-cell">
+                      {items.map((it, i) => (
+                        <div key={i}>
+                          {it.name} × {it.quantity} @ ₹{it.price}
+                        </div>
+                      ))}
+                    </td>
+                    <td>₹{getTotal(inv).toFixed(2)}</td>
+                    <td className="template-cell">{inv.template}</td>
+                    <td>{new Date(inv.generatedAt).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
