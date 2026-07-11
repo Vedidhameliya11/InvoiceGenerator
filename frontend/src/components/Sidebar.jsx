@@ -4,6 +4,7 @@ const ALL_MENU_ITEMS = [
   { key: "dashboard", label: "Dashboard", icon: "📊" },
   { key: "add", label: "Add Invoice", icon: "🧾" },
   { key: "history", label: "History", icon: "🕒" },
+  { key: "products", label: "Products", icon: "📦" },
   { key: "templates", label: "Templates", icon: "📄" },
   { key: "shops", label: "Manage Shops", icon: "🏬" },
   { key: "profile", label: "Edit Profile", icon: "👤" },
@@ -14,7 +15,7 @@ const ALL_MENU_ITEMS = [
 // can edit their own profile.
 const ROLE_MENUS = {
   admin: ["dashboard", "shops", "templates"],
-  user: ["dashboard", "add", "history", "templates", "profile"],
+  user: ["dashboard", "add", "history", "products", "templates", "profile"],
 };
 
 export default function Sidebar({ activeTab, setActiveTab, role }) {

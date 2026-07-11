@@ -16,6 +16,7 @@ from routes import router as template_router
 from admin_auth import router as admin_router
 from admin_shops import router as admin_shops_router
 from customers import router as customers_router
+from products import router as products_router
 
 app = FastAPI()
 
@@ -40,6 +41,7 @@ app.include_router(template_router)
 app.include_router(admin_router)
 app.include_router(admin_shops_router)
 app.include_router(customers_router)
+app.include_router(products_router)
 
 
 class Invoice(BaseModel):

@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import DashboardHome from "./DashboardHome";
 import AddInvoice from "./AddInvoice";
 import History from "./History";
+import Products from "./Products";
 import Templates from "./Templates";
 import ManageShops from "./ManageShops";
 import EditProfile from "./EditProfile";
@@ -55,6 +56,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
           {activeTab === "dashboard" && <DashboardHome />}
           {!isAdmin && activeTab === "add" && <AddInvoice />}
           {!isAdmin && activeTab === "history" && <History />}
+          {!isAdmin && activeTab === "products" && <Products />}
           {activeTab === "templates" && <Templates />}
           {isAdmin && activeTab === "shops" && <ManageShops />}
         </div>
