@@ -28,8 +28,9 @@ def get_color(invoice, default):
 
 def get_line_items(invoice):
     """Returns a list of (name, price, quantity, line_total) tuples plus
-    the grand total, working whether the invoice has multiple `items` or
-    (for backward compatibility) the old single product fields."""
+    the subtotal (sum of all line totals, before GST), working whether
+    the invoice has multiple `items` or (for backward compatibility) the
+    old single product fields."""
     items = getattr(invoice, "items", None)
 
     if items:
@@ -47,8 +48,18 @@ def get_line_items(invoice):
             )
         ]
 
-    grand_total = sum(r[3] for r in rows)
-    return rows, grand_total
+    subtotal = sum(r[3] for r in rows)
+    return rows, subtotal
+
+
+def get_totals(invoice, subtotal):
+    """Returns (gst_percent, gst_amount, grand_total) where grand_total
+    is the subtotal plus GST. gstPercent defaults to 0 for older
+    invoices/requests that don't include it."""
+    gst_percent = getattr(invoice, "gstPercent", 0) or 0
+    gst_amount = subtotal * gst_percent / 100
+    grand_total = subtotal + gst_amount
+    return gst_percent, gst_amount, grand_total
 
 
 def fmt(n):
@@ -67,7 +78,8 @@ def generate_classic(invoice):
     font, bold_font = get_font(invoice)
     accent = get_color(invoice, "#111827")
 
-    rows, grand_total = get_line_items(invoice)
+    rows, subtotal = get_line_items(invoice)
+    gst_percent, gst_amount, grand_total = get_totals(invoice, subtotal)
     row_height = 22
 
     c.setFillColor(accent)
@@ -107,9 +119,19 @@ def generate_classic(invoice):
     table_bottom_y = row_start_y - len(rows) * row_height + 5
     c.line(40, table_bottom_y, 555, table_bottom_y)
 
+    c.setFillColor(black)
+    c.setFont(font, 12)
+    subtotal_y = table_bottom_y - 25
+    c.drawString(340, subtotal_y, "Subtotal :")
+    c.drawString(460, subtotal_y, f"₹ {fmt(subtotal)}")
+
+    gst_y = subtotal_y - 20
+    c.drawString(340, gst_y, f"GST ({fmt(gst_percent)}%) :")
+    c.drawString(460, gst_y, f"₹ {fmt(gst_amount)}")
+
     c.setFillColor(accent)
     c.setFont(bold_font, 13)
-    grand_total_y = table_bottom_y - 30
+    grand_total_y = gst_y - 25
     c.drawString(340, grand_total_y, "Grand Total :")
     c.drawString(460, grand_total_y, f"₹ {fmt(grand_total)}")
 
@@ -126,7 +148,8 @@ def generate_modern(invoice):
     font, bold_font = get_font(invoice)
     accent = get_color(invoice, "#2563EB")
 
-    rows, grand_total = get_line_items(invoice)
+    rows, subtotal = get_line_items(invoice)
+    gst_percent, gst_amount, grand_total = get_totals(invoice, subtotal)
     row_height = 22
 
     # Accent Header
@@ -168,7 +191,16 @@ def generate_modern(invoice):
         c.drawString(340, y, str(qty))
         c.drawString(445, y, f"₹ {fmt(line_total)}")
 
-    total_y = row_start_y - len(rows) * row_height - 15
+    subtotal_y = row_start_y - len(rows) * row_height - 15
+    c.setFont(font, 12)
+    c.drawString(340, subtotal_y, "Subtotal")
+    c.drawString(455, subtotal_y, f"₹ {fmt(subtotal)}")
+
+    gst_y = subtotal_y - 20
+    c.drawString(340, gst_y, f"GST ({fmt(gst_percent)}%)")
+    c.drawString(455, gst_y, f"₹ {fmt(gst_amount)}")
+
+    total_y = gst_y - 25
     c.setFont(bold_font, 14)
     c.drawString(340, total_y, "Grand Total")
     c.drawString(455, total_y, f"₹ {fmt(grand_total)}")
@@ -192,7 +224,8 @@ def generate_corporate(invoice):
     font, bold_font = get_font(invoice)
     accent = get_color(invoice, "#374151")
 
-    rows, grand_total = get_line_items(invoice)
+    rows, subtotal = get_line_items(invoice)
+    gst_percent, gst_amount, grand_total = get_totals(invoice, subtotal)
     row_height = 22
 
     # Header
@@ -242,9 +275,14 @@ def generate_corporate(invoice):
         c.drawString(360, y, str(qty))
         c.drawString(450, y, f"₹ {fmt(line_total)}")
 
+    c.setFillColor(black)
+    c.setFont(font, 12)
+    c.drawRightString(540, table_bottom - 25, f"Subtotal : ₹ {fmt(subtotal)}")
+    c.drawRightString(540, table_bottom - 45, f"GST ({fmt(gst_percent)}%) : ₹ {fmt(gst_amount)}")
+
     c.setFillColor(accent)
     c.setFont(bold_font, 14)
-    c.drawRightString(540, table_bottom - 30, f"Grand Total : ₹ {fmt(grand_total)}")
+    c.drawRightString(540, table_bottom - 70, f"Grand Total : ₹ {fmt(grand_total)}")
 
     # Signature
     c.setFillColor(black)
@@ -268,7 +306,8 @@ def generate_minimal(invoice):
     font, bold_font = get_font(invoice)
     accent = get_color(invoice, "#000000")
 
-    rows, grand_total = get_line_items(invoice)
+    rows, subtotal = get_line_items(invoice)
+    gst_percent, gst_amount, grand_total = get_totals(invoice, subtotal)
     row_height = 22
 
     c.setFillColor(accent)
@@ -301,9 +340,14 @@ def generate_minimal(invoice):
     line_y = row_start_y - len(rows) * row_height + 5
     c.line(50, line_y, 540, line_y)
 
+    c.setFillColor(black)
+    c.setFont(font, 12)
+    c.drawString(50, line_y - 25, f"Subtotal : ₹ {fmt(subtotal)}")
+    c.drawString(50, line_y - 45, f"GST ({fmt(gst_percent)}%) : ₹ {fmt(gst_amount)}")
+
     c.setFillColor(accent)
     c.setFont(bold_font, 14)
-    c.drawString(50, line_y - 30, f"Total : ₹ {fmt(grand_total)}")
+    c.drawString(50, line_y - 70, f"Total : ₹ {fmt(grand_total)}")
 
     c.save()
 
@@ -322,7 +366,8 @@ def generate_premium(invoice):
     font, bold_font = get_font(invoice)
     gold = get_color(invoice, "#B8860B")
 
-    rows, grand_total = get_line_items(invoice)
+    rows, subtotal = get_line_items(invoice)
+    gst_percent, gst_amount, grand_total = get_totals(invoice, subtotal)
     row_height = 22
 
     c.setStrokeColor(gold)
@@ -365,9 +410,14 @@ def generate_premium(invoice):
     line_y = row_start_y - len(rows) * row_height + 5
     c.line(40, line_y, 550, line_y)
 
+    c.setFillColor(black)
+    c.setFont(font, 12)
+    c.drawRightString(530, line_y - 25, f"Subtotal : ₹ {fmt(subtotal)}")
+    c.drawRightString(530, line_y - 45, f"GST ({fmt(gst_percent)}%) : ₹ {fmt(gst_amount)}")
+
     c.setFillColor(gold)
     c.setFont(bold_font, 16)
-    c.drawRightString(530, line_y - 30, f"Grand Total : ₹ {fmt(grand_total)}")
+    c.drawRightString(530, line_y - 70, f"Grand Total : ₹ {fmt(grand_total)}")
 
     c.setFillColor(black)
     c.setFont(font, 12)

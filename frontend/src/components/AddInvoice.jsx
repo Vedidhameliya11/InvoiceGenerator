@@ -29,6 +29,7 @@ export default function AddInvoice() {
     organizationName: "",
     customerName: "",
     items: [emptyItem()],
+    gstPercent: "",
     template: "",
     font: "Helvetica",
     color: "#2563eb",
@@ -256,6 +257,22 @@ export default function AddInvoice() {
     0
   );
 
+  const gstPercentNum = Math.min(100, Math.max(0, Number(formData.gstPercent) || 0));
+  const gstAmount = (grandTotal * gstPercentNum) / 100;
+  const totalWithGst = grandTotal + gstAmount;
+
+  const handleGstChange = (e) => {
+    let value = e.target.value;
+    // Allow the field to be cleared while typing, but clamp once there's
+    // an actual number so it can never go below 0 or above 100.
+    if (value !== "") {
+      const num = Math.min(100, Math.max(0, Number(value)));
+      value = String(num);
+    }
+    setFormData((prev) => ({ ...prev, gstPercent: value }));
+    setShowPreview(false);
+  };
+
   // 🔥 Generate PDF
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -277,6 +294,7 @@ export default function AddInvoice() {
       organizationName: formData.organizationName,
       customerName: formData.customerName,
       items: cleanItems,
+      gstPercent: gstPercentNum,
       template: formData.template,
       font: formData.font,
       color: formData.color,
@@ -299,8 +317,9 @@ export default function AddInvoice() {
       link.click();
       link.remove();
 
-      const total = cleanItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
-      saveToHistory(payload, total);
+      const subtotal = cleanItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
+      const gstAmt = (subtotal * gstPercentNum) / 100;
+      saveToHistory(payload, subtotal + gstAmt);
     } catch (error) {
       alert("Something went wrong!");
     }
@@ -443,8 +462,33 @@ export default function AddInvoice() {
             + Add Another Product
           </button>
 
-          <div className="items-grand-total">
-            Grand Total: ₹{grandTotal.toFixed(2)}
+          <div className="gst-row">
+            <label htmlFor="gstPercent">GST %</label>
+            <input
+              id="gstPercent"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              placeholder="0"
+              value={formData.gstPercent}
+              onChange={handleGstChange}
+            />
+          </div>
+
+          <div className="totals-summary">
+            <div>
+              <span>Subtotal</span>
+              <span>₹{grandTotal.toFixed(2)}</span>
+            </div>
+            <div>
+              <span>GST ({gstPercentNum}%)</span>
+              <span>₹{gstAmount.toFixed(2)}</span>
+            </div>
+            <div className="totals-grand">
+              <span>Grand Total</span>
+              <span>₹{totalWithGst.toFixed(2)}</span>
+            </div>
           </div>
         </div>
 

@@ -1,10 +1,13 @@
 function MinimalPreview({ data, color, font }) {
 
   const items = data.items || [];
-  const total = items.reduce(
+  const subtotal = items.reduce(
     (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
     0
   );
+  const gstPercent = Number(data.gstPercent) || 0;
+  const gstAmount = (subtotal * gstPercent) / 100;
+  const total = subtotal + gstAmount;
 
   const style = {
     "--tpl-color": color || "#000000",
@@ -46,7 +49,9 @@ function MinimalPreview({ data, color, font }) {
 
       <hr />
 
-      <h2>Total : ₹{total}</h2>
+      <p>Subtotal : ₹{subtotal.toFixed(2)}</p>
+      <p>GST ({gstPercent}%) : ₹{gstAmount.toFixed(2)}</p>
+      <h2>Total : ₹{total.toFixed(2)}</h2>
 
     </div>
   );

@@ -53,6 +53,7 @@ class Invoice(BaseModel):
     template: str
     font: Optional[str] = "Helvetica"
     color: Optional[str] = "#2563EB"
+    gstPercent: float = Field(0, ge=0, le=100)
 
 
 @app.get("/")

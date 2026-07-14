@@ -564,3 +564,44 @@ button {
   padding-top: 6px;
   border-top: 1px solid #e5e7eb;
 }
+
+
+.gst-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+}
+
+.gst-row label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.gst-row input {
+  width: 90px;
+  margin: 0;
+}
+
+.totals-summary {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+
+.totals-summary > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #374151;
+  padding: 3px 0;
+}
+
+.totals-summary .totals-grand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2937;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 6px;
+  padding-top: 8px;
+}

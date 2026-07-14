@@ -1,9 +1,12 @@
 function PremiumPreview({ data, color, font }) {
   const items = data.items || [];
-  const total = items.reduce(
+  const subtotal = items.reduce(
     (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
     0
   );
+  const gstPercent = Number(data.gstPercent) || 0;
+  const gstAmount = (subtotal * gstPercent) / 100;
+  const total = subtotal + gstAmount;
 
   const style = {
     "--tpl-color": color || "#b8860b",
@@ -47,7 +50,9 @@ function PremiumPreview({ data, color, font }) {
           </tbody>
         </table>
 
-        <h2>Grand Total : ₹{total}</h2>
+        <p>Subtotal : ₹{subtotal.toFixed(2)}</p>
+        <p>GST ({gstPercent}%) : ₹{gstAmount.toFixed(2)}</p>
+        <h2>Grand Total : ₹{total.toFixed(2)}</h2>
 
       </div>
 
