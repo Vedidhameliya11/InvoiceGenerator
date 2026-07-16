@@ -236,21 +236,23 @@ export default function AddInvoice() {
   };
 
   // Save a record of this invoice so it shows up under History
-  const saveToHistory = (data, grandTotal) => {
-    const existing = JSON.parse(localStorage.getItem("invoiceHistory")) || [];
+ const saveToHistory = async (data, grandTotal) => {
+  if (!shopId) return;
 
-    const record = {
-      ...data,
+  try {
+    await axios.post(`${API_BASE}/invoices`, {
+      shop_id: shopId,
+      organizationName: data.organizationName,
+      customerName: data.customerName,
+      items: data.items,
+      gstPercent: data.gstPercent,
+      template: data.template,
       grandTotal,
-      id: Date.now(),
-      generatedAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(
-      "invoiceHistory",
-      JSON.stringify([record, ...existing])
-    );
-  };
+    });
+  } catch (err) {
+    console.error("Failed to save invoice to history:", err);
+  }
+};
 
   const grandTotal = formData.items.reduce(
     (sum, it) => sum + (Number(it.price) || 0) * (Number(it.quantity) || 0),
@@ -319,7 +321,7 @@ export default function AddInvoice() {
 
       const subtotal = cleanItems.reduce((sum, it) => sum + it.price * it.quantity, 0);
       const gstAmt = (subtotal * gstPercentNum) / 100;
-      saveToHistory(payload, subtotal + gstAmt);
+      await saveToHistory(payload, subtotal + gstAmt);
     } catch (error) {
       alert("Something went wrong!");
     }

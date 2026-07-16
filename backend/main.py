@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from invoices import router as invoices_router
 
 from templates import (
     generate_classic,
@@ -38,6 +39,7 @@ app.include_router(admin_router)
 app.include_router(admin_shops_router)
 app.include_router(customers_router)
 app.include_router(products_router)
+app.include_router(invoices_router)
 
 
 class InvoiceItem(BaseModel):

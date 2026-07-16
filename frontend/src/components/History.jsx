@@ -1,17 +1,38 @@
 import { useEffect, useState } from "react";
+import axios from "axios";
+import { API_BASE } from "../config";
 import "./History.css";
 
 export default function History() {
   const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const shopUser = JSON.parse(localStorage.getItem("shopUser") || "null");
+  const shopId = shopUser?.id;
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("invoiceHistory")) || [];
-    setInvoices(stored);
-  }, []);
+    const fetchInvoices = async () => {
+      if (!shopId) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await axios.get(`${API_BASE}/invoices`, {
+          params: { shop_id: shopId },
+        });
+        setInvoices(res.data);
+      } catch (err) {
+        console.error("Failed to load invoice history:", err);
+        setError("Couldn't load invoice history. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Older history records (before multiple products were supported) had
-  // productName/productPrice/productQuantity directly on the record
-  // instead of an `items` array — normalize both shapes here.
+    fetchInvoices();
+  }, [shopId]);
+
   const getItems = (inv) => {
     if (inv.items && inv.items.length) return inv.items;
     if (inv.productName) {
@@ -40,7 +61,11 @@ export default function History() {
         <h1>Invoice History</h1>
       </div>
 
-      {invoices.length === 0 ? (
+      {loading ? (
+        <p className="history-empty">Loading…</p>
+      ) : error ? (
+        <p className="history-empty">{error}</p>
+      ) : invoices.length === 0 ? (
         <p className="history-empty">
           No invoices generated yet. Create one from "Add Invoice".
         </p>
