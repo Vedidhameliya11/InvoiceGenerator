@@ -1,8 +1,7 @@
-from fastapi.responses import FileResponse
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 from reportlab.pdfgen import canvas
 from reportlab.lib.colors import black, white, HexColor
-
-PDF_PATH = "invoice.pdf"
 
 BOLD_VARIANT = {
     "Helvetica": "Helvetica-Bold",
@@ -72,7 +71,8 @@ def fmt(n):
 
 def generate_classic(invoice):
 
-    c = canvas.Canvas(PDF_PATH)
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
     width, height = 595, 842
 
     font, bold_font = get_font(invoice)
@@ -136,13 +136,19 @@ def generate_classic(invoice):
     c.drawString(460, grand_total_y, f"₹ {fmt(grand_total)}")
 
     c.save()
+    buffer.seek(0)
 
-    return FileResponse(PDF_PATH, media_type="application/pdf", filename="invoice.pdf")
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=invoice.pdf"},
+    )
 
 
 def generate_modern(invoice):
 
-    c = canvas.Canvas(PDF_PATH)
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
     width, height = 595, 842
 
     font, bold_font = get_font(invoice)
@@ -212,13 +218,19 @@ def generate_modern(invoice):
     c.drawCentredString(width / 2, 18, "Thank You For Your Purchase!")
 
     c.save()
+    buffer.seek(0)
 
-    return FileResponse(PDF_PATH, media_type="application/pdf", filename="invoice.pdf")
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=invoice.pdf"},
+    )
 
 
 def generate_corporate(invoice):
 
-    c = canvas.Canvas(PDF_PATH)
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
     width, height = 595, 842
 
     font, bold_font = get_font(invoice)
@@ -291,17 +303,19 @@ def generate_corporate(invoice):
     c.drawString(410, 165, "Authorized Signature")
 
     c.save()
+    buffer.seek(0)
 
-    return FileResponse(
-        PDF_PATH,
+    return StreamingResponse(
+        buffer,
         media_type="application/pdf",
-        filename="invoice.pdf"
+        headers={"Content-Disposition": "attachment; filename=invoice.pdf"},
     )
 
 
 def generate_minimal(invoice):
 
-    c = canvas.Canvas(PDF_PATH)
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
 
     font, bold_font = get_font(invoice)
     accent = get_color(invoice, "#000000")
@@ -350,17 +364,19 @@ def generate_minimal(invoice):
     c.drawString(50, line_y - 70, f"Total : ₹ {fmt(grand_total)}")
 
     c.save()
+    buffer.seek(0)
 
-    return FileResponse(
-        PDF_PATH,
+    return StreamingResponse(
+        buffer,
         media_type="application/pdf",
-        filename="invoice.pdf"
+        headers={"Content-Disposition": "attachment; filename=invoice.pdf"},
     )
 
 
 def generate_premium(invoice):
 
-    c = canvas.Canvas(PDF_PATH)
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer)
     width = 595
 
     font, bold_font = get_font(invoice)
@@ -424,9 +440,10 @@ def generate_premium(invoice):
     c.drawCentredString(width / 2, 80, "Thank You For Choosing Us!")
 
     c.save()
+    buffer.seek(0)
 
-    return FileResponse(
-        PDF_PATH,
+    return StreamingResponse(
+        buffer,
         media_type="application/pdf",
-        filename="invoice.pdf"
+        headers={"Content-Disposition": "attachment; filename=invoice.pdf"},
     )
