@@ -24,6 +24,8 @@ function StatCard({ label, value }) {
   );
 }
 
+const RANGE_OPTIONS = [7, 14, 30];
+
 export default function DashboardHome({ role = "user", shopUser = null }) {
   const isAdmin = role === "admin";
   const shopId = shopUser?.id;
@@ -31,12 +33,15 @@ export default function DashboardHome({ role = "user", shopUser = null }) {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [rangeDays, setRangeDays] = useState(7); // default 7-day window for admin's daily view
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         if (isAdmin) {
-          const res = await axios.get(`${API_BASE}/admin/invoices/stats`);
+          const res = await axios.get(`${API_BASE}/admin/invoices/stats`, {
+            params: { days: rangeDays },
+          });
           setStats(res.data);
         } else {
           if (!shopId) {
@@ -57,7 +62,7 @@ export default function DashboardHome({ role = "user", shopUser = null }) {
     };
 
     fetchStats();
-  }, [isAdmin, shopId]);
+  }, [isAdmin, shopId, rangeDays]);
 
   if (loading) {
     return (
@@ -85,6 +90,21 @@ export default function DashboardHome({ role = "user", shopUser = null }) {
 
   return (
     <div className="dashboard-home">
+      {isAdmin && (
+        <div className="range-selector">
+          <span className="range-selector-label">Show activity for:</span>
+          {RANGE_OPTIONS.map((d) => (
+            <button
+              key={d}
+              className={`range-btn ${rangeDays === d ? "range-btn-active" : ""}`}
+              onClick={() => setRangeDays(d)}
+            >
+              Last {d} days
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="stat-cards">
         {isAdmin ? (
           <>
@@ -93,6 +113,11 @@ export default function DashboardHome({ role = "user", shopUser = null }) {
             <StatCard
               label="Total Revenue (All Shops)"
               value={`₹${stats.total_revenue.toFixed(2)}`}
+            />
+            <StatCard label="Invoices Today" value={stats.invoices_today} />
+            <StatCard
+              label={`New Signups (${stats.range_days}d)`}
+              value={stats.new_shops_count}
             />
           </>
         ) : (
@@ -107,23 +132,89 @@ export default function DashboardHome({ role = "user", shopUser = null }) {
       </div>
 
       {isAdmin ? (
-        <div className="chart-card">
-          <h3>Invoices by Shop</h3>
-          {stats.by_shop.length === 0 ? (
-            <p className="dashboard-home-msg">No invoices generated yet.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={stats.by_shop}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="shop_name" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="count" name="Invoices" fill="#2563eb" />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+        <>
+          <div className="chart-card">
+            <h3>Daily Invoices — Last {stats.range_days} Days (All Shops)</h3>
+            {stats.daily.every((d) => d.count === 0) ? (
+              <p className="dashboard-home-msg">No invoices generated in this period.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={stats.daily}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" name="Invoices" fill="#2563eb" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className="chart-card">
+            <h3>Invoices by Shop</h3>
+            {stats.by_shop.length === 0 ? (
+              <p className="dashboard-home-msg">No invoices generated yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={stats.by_shop}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="shop_name" tick={{ fontSize: 12 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="count" name="Invoices" fill="#2563eb" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          <div className="chart-card">
+            <h3>Newly Signed-Up Shops (Last {stats.range_days} Days)</h3>
+            {stats.new_shops.length === 0 ? (
+              <p className="dashboard-home-msg">No new shops have signed up in this period.</p>
+            ) : (
+              <div className="table-scroll">
+                <table className="new-shops-table">
+                  <thead>
+                    <tr>
+                      <th>Shop</th>
+                      <th>Owner</th>
+                      <th>Signed Up</th>
+                      <th>Status</th>
+                      <th>Invoices Today</th>
+                      <th>Invoices ({stats.range_days}d)</th>
+                      <th>Invoices (Total)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.new_shops.map((s) => (
+                      <tr key={s.shop_id}>
+                        <td>{s.shop_name}</td>
+                        <td>{s.owner_name}</td>
+                        <td>
+                          {new Date(s.signed_up_at).toLocaleDateString(undefined, {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td>
+                          <span className={`status-pill status-${s.status}`}>
+                            {s.status}
+                          </span>
+                        </td>
+                        <td>{s.invoices_today}</td>
+                        <td>{s.invoices_in_range}</td>
+                        <td>{s.invoices_total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className="chart-card">
           <h3>Invoices — Last 6 Months</h3>
