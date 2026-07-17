@@ -53,7 +53,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
         </div>
 
         <div className="dashboard-content">
-          {activeTab === "dashboard" && <DashboardHome />}
+          {activeTab === "dashboard" && <DashboardHome role={role} shopUser={shopUser} />}
           {!isAdmin && activeTab === "add" && <AddInvoice />}
           {!isAdmin && activeTab === "history" && <History />}
           {!isAdmin && activeTab === "products" && <Products />}
