@@ -7,6 +7,8 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from database import db
+from admin_shops import _send_email, ADMIN_NOTIFY_EMAIL
+from notifications import create_notification
 
 router = APIRouter()
 
@@ -82,6 +84,52 @@ def _day_key(dt: datetime) -> str:
     return dt.date().isoformat()
 
 
+async def _notify_admin_new_invoice(inv: dict):
+    """Best-effort 'new update' notification to the admin for every
+    invoice generated, across all shops: an in-app notification (always)
+    plus an email (only if ADMIN_NOTIFY_EMAIL / SMTP is configured).
+    Never raises — a failed/unconfigured email must never block invoice
+    creation, and neither should this notification step."""
+    shop_name = "Unknown shop"
+    try:
+        shop_doc = await db.shops.find_one({"_id": ObjectId(inv["shop_id"])})
+        if shop_doc:
+            shop_name = shop_doc.get("shop_name", shop_name)
+    except Exception:
+        pass
+
+    # In-app notification (bell/feed in the admin dashboard) — independent
+    # of whether email is configured.
+    await create_notification(
+        type_="new_invoice",
+        title=f"New invoice — {shop_name}",
+        message=f"{inv.get('customerName', 'A customer')} — ₹{inv.get('grandTotal', 0)}",
+        meta={"invoice_id": inv.get("id"), "shop_id": inv.get("shop_id"), "shop_name": shop_name},
+    )
+
+    if not ADMIN_NOTIFY_EMAIL:
+        print("[admin notify email skipped - no ADMIN_NOTIFY_EMAIL / ADMIN_EMAIL configured]")
+        return
+
+    item_lines = "\n".join(
+        f"  - {item.get('name')} x{item.get('quantity')} @ ₹{item.get('price')}"
+        for item in inv.get("items", [])
+    ) or "  (no items)"
+
+    subject = f"🧾 New invoice — {shop_name} (₹{inv.get('grandTotal', 0)})"
+    body = (
+        f"A new invoice was just generated.\n\n"
+        f"Shop:        {shop_name}\n"
+        f"Customer:    {inv.get('customerName', '')}\n"
+        f"Grand Total: ₹{inv.get('grandTotal', 0)}\n"
+        f"GST %:       {inv.get('gstPercent', 0)}\n"
+        f"Generated:   {inv.get('generatedAt', '')}\n\n"
+        f"Items:\n{item_lines}\n\n"
+        f"— Invoice App"
+    )
+    _send_email(ADMIN_NOTIFY_EMAIL, subject, body)
+
+
 # ---------- Routes ----------
 # NOTE: shop_id is always required for shop-owner-facing endpoints so that
 # a shop only ever sees invoices it created — never another shop's data.
@@ -92,7 +140,13 @@ async def create_invoice(payload: InvoiceRecordIn):
     doc["generatedAt"] = datetime.now(timezone.utc)
     result = await db.invoices.insert_one(doc)
     doc["_id"] = result.inserted_id
-    return _serialize(doc)
+    serialized = _serialize(doc)
+
+    # Best-effort admin notification — invoice creation still succeeds
+    # even if the email fails or isn't configured.
+    await _notify_admin_new_invoice(serialized)
+
+    return serialized
 
 
 @router.get("/invoices")

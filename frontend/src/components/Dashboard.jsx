@@ -8,6 +8,7 @@ import Products from "./Products";
 import Templates from "./Templates";
 import ManageShops from "./ManageShops";
 import EditProfile from "./EditProfile";
+import NotificationBell from "./NotificationBell";
 
 import "./Dashboard.css";
 
@@ -36,6 +37,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
         <div className="dashboard-topbar">
           <div />
           <div className="topbar-actions">
+            {isAdmin && <NotificationBell />}
             {!isAdmin && (
               <button
                 type="button"
