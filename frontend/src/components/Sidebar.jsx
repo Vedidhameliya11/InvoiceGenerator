@@ -7,14 +7,15 @@ const ALL_MENU_ITEMS = [
   { key: "products", label: "Products", icon: "📦" },
   { key: "templates", label: "Templates", icon: "📄" },
   { key: "shops", label: "Manage Shops", icon: "🏬" },
+  { key: "announcements", label: "Announcements", icon: "📢" },
   { key: "profile", label: "Edit Profile", icon: "👤" },
 ];
 
-// Admin manages the platform: overview, shop onboarding/approval, and
-// templates. Regular shop users create/track their own invoices and
-// can edit their own profile.
+// Admin manages the platform: overview, shop onboarding/approval,
+// templates, and broadcasting updates to shop owners. Regular shop
+// users create/track their own invoices and can edit their own profile.
 const ROLE_MENUS = {
-  admin: ["dashboard", "shops", "templates"],
+  admin: ["dashboard", "shops", "templates", "announcements"],
   user: ["dashboard", "add", "history", "products", "templates", "profile"],
 };
 

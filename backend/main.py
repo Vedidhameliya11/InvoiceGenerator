@@ -17,6 +17,7 @@ from routes import router as template_router
 from admin_auth import router as admin_router
 from admin_shops import router as admin_shops_router
 from notifications import router as notifications_router
+from announcements import router as announcements_router
 from customers import router as customers_router
 from products import router as products_router
 
@@ -39,6 +40,7 @@ app.include_router(template_router)
 app.include_router(admin_router)
 app.include_router(admin_shops_router)
 app.include_router(notifications_router)
+app.include_router(announcements_router)
 app.include_router(customers_router)
 app.include_router(products_router)
 app.include_router(invoices_router)

@@ -9,6 +9,8 @@ import Templates from "./Templates";
 import ManageShops from "./ManageShops";
 import EditProfile from "./EditProfile";
 import NotificationBell from "./NotificationBell";
+import Announcements from "./Announcements";
+import ShopUpdatesBell from "./ShopUpdatesBell";
 
 import "./Dashboard.css";
 
@@ -38,6 +40,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
           <div />
           <div className="topbar-actions">
             {isAdmin && <NotificationBell />}
+            {!isAdmin && <ShopUpdatesBell shopId={shopUser?.id} />}
             {!isAdmin && (
               <button
                 type="button"
@@ -61,6 +64,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
           {!isAdmin && activeTab === "products" && <Products />}
           {activeTab === "templates" && <Templates />}
           {isAdmin && activeTab === "shops" && <ManageShops />}
+          {isAdmin && activeTab === "announcements" && <Announcements />}
         </div>
       </div>
 
