@@ -155,3 +155,33 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.view-profile-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.view-profile-row:first-of-type {
+  padding-top: 0;
+}
+
+.view-profile-row:last-of-type {
+  border-bottom: none;
+}
+
+.view-profile-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.view-profile-value {
+  font-size: 14px;
+  color: #1e293b;
+  word-break: break-word;
+}

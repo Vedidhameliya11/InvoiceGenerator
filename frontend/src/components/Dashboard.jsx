@@ -8,6 +8,7 @@ import Products from "./Products";
 import Templates from "./Templates";
 import ManageShops from "./ManageShops";
 import EditProfile from "./EditProfile";
+import ViewProfile from "./ViewProfile";
 import NotificationBell from "./NotificationBell";
 import Announcements from "./Announcements";
 import ShopUpdatesBell from "./ShopUpdatesBell";
@@ -16,7 +17,11 @@ import "./Dashboard.css";
 
 export default function Dashboard({ onLogout, role = "user", shopUser = null, onShopUpdated }) {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [showProfile, setShowProfile] = useState(false);
+  // Sidebar "Edit Profile" opens the editable form directly.
+  // Topbar profile icon (next to Logout) opens a read-only view first,
+  // which itself has an "Edit Profile" button that hands off to the form.
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showViewProfile, setShowViewProfile] = useState(false);
 
   const isAdmin = role === "admin";
 
@@ -25,7 +30,7 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
   // switching to a tab that dashboard-content has nothing to render for.
   const handleTabChange = (tab) => {
     if (tab === "profile") {
-      setShowProfile(true);
+      setShowEditProfile(true);
       return;
     }
     setActiveTab(tab);
@@ -45,8 +50,8 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
               <button
                 type="button"
                 className="profile-btn"
-                title="Edit Profile"
-                onClick={() => setShowProfile(true)}
+                title="My Profile"
+                onClick={() => setShowViewProfile(true)}
               >
                 👤 Profile
               </button>
@@ -68,10 +73,21 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
         </div>
       </div>
 
-      {showProfile && !isAdmin && (
+      {showViewProfile && !isAdmin && (
+        <ViewProfile
+          shop={shopUser}
+          onClose={() => setShowViewProfile(false)}
+          onEdit={() => {
+            setShowViewProfile(false);
+            setShowEditProfile(true);
+          }}
+        />
+      )}
+
+      {showEditProfile && !isAdmin && (
         <EditProfile
           shop={shopUser}
-          onClose={() => setShowProfile(false)}
+          onClose={() => setShowEditProfile(false)}
           onUpdated={(updated) => {
             if (onShopUpdated) onShopUpdated(updated);
           }}
