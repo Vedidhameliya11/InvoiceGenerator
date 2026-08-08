@@ -8,6 +8,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
@@ -254,4 +256,12 @@
 .products-modal-cancel:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .products-container { padding: 16px; }
+  .products-table th, .products-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
 }

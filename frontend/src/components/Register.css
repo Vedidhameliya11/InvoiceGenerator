@@ -5,14 +5,17 @@
   justify-content: center;
   align-items: center;
   padding: 30px;
+  box-sizing: border-box;
 }
 
 .register-box {
-  width: 600px;
+  width: 100%;
+  max-width: 600px;
   background: white;
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 5px 20px rgba(0,0,0,.15);
+  box-sizing: border-box;
 }
 
 .register-box h2 {
@@ -149,4 +152,17 @@
 
 .login-link-btn:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+  .register-wrapper {
+    padding: 16px;
+    align-items: flex-start;
+  }
+  .register-box {
+    padding: 20px 16px;
+    border-radius: 8px;
+  }
+  .map-container { height: 260px; }
+  .search-container { left: 15px; }
 }

@@ -140,3 +140,9 @@
   background: #fef3c7;
   color: #b45309;
 }
+
+@media (max-width: 640px) {
+  .dashboard-home { padding: 16px; }
+  .stat-cards { grid-template-columns: 1fr; }
+  .chart-card { padding: 14px; }
+}
