@@ -68,11 +68,3 @@
     font-size: 13px;
   }
 }
-
-  .sidebar-logo {
-    display: none;
-  }
-
-  .sidebar-menu {
-    flex-direction: row;
-  }
