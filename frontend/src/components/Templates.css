@@ -12,6 +12,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 25px;
 }
 
@@ -52,7 +54,7 @@
 .templates-table-wrapper {
   background: #fff;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
   border: 1px solid #eef0f2;
 }
 
@@ -359,4 +361,22 @@
 
 .delete-btn:hover {
   background: #fac9c9;
+}
+
+@media (max-width: 768px) {
+  .templates-container { padding: 16px; }
+  .templates-header h2 { font-size: 26px; }
+  .add-template-btn { min-width: 0; padding: 10px 16px; }
+  .template-modal-box { padding: 20px 16px; max-height: 90vh; }
+  .template-modal-box h2 { font-size: 22px; }
+  .template-preview-section { flex-direction: column; }
+  .template-picker { flex: 1 1 auto; width: 100%; }
+  .template-preview-box { width: 100%; }
+  .preview-container { width: 100%; height: auto; min-height: 90px; }
+  .radio-row { gap: 16px; }
+  .templates-table th, .templates-table td {
+    padding: 12px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
 }

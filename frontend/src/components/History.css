@@ -1,12 +1,15 @@
 .history-container {
   padding: 30px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .history-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
@@ -75,4 +78,12 @@
   font-size: 13px;
   color: #374151;
   min-width: 180px;
+}
+
+@media (max-width: 640px) {
+  .history-container { padding: 16px; }
+  .history-table th, .history-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
 }

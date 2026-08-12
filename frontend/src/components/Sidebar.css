@@ -57,13 +57,14 @@
     min-height: auto;
     flex-direction: row;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
-
-  .sidebar-logo {
-    display: none;
-  }
-
-  .sidebar-menu {
-    flex-direction: row;
+  .sidebar-logo { display: none; }
+  .sidebar-menu { flex-direction: row; padding: 8px; }
+  .sidebar-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 10px 12px;
+    font-size: 13px;
   }
 }

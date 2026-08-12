@@ -6,6 +6,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 16px;
 }
 
@@ -202,4 +204,11 @@
 
 .delete-btn:hover {
   background: #fac9c9;
+}
+
+@media (max-width: 640px) {
+  .shops-container { padding: 16px; }
+  .shops-form-grid { grid-template-columns: 1fr; }
+  .shops-form-actions { flex-direction: column; }
+  .shops-save-btn, .shops-approve-btn { width: 100%; }
 }

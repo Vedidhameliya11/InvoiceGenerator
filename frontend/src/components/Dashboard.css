@@ -64,3 +64,21 @@
   flex: 1;
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .dashboard-layout {
+    flex-direction: column;
+    min-height: auto;
+  }
+  .dashboard-topbar {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .dashboard-content { overflow-x: hidden; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-topbar { padding: 10px 14px; }
+  .profile-btn, .logout-btn { padding: 6px 12px; font-size: 12px; }
+}
