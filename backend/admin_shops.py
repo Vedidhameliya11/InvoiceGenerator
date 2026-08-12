@@ -3,18 +3,33 @@ import secrets
 import string
 import smtplib
 import bcrypt
-from datetime import datetime, timezone
 from email.mime.text import MIMEText
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 from bson import ObjectId
 from bson.errors import InvalidId
 
 from database import db
-from notifications import create_notification
 
 router = APIRouter()
+
+# Only these email domains are accepted for shop-owner accounts.
+ALLOWED_EMAIL_DOMAINS = {"gmail.com", "yahoo.com"}
+
+
+def _validate_owner_name(value: str) -> str:
+    cleaned = value.strip()
+    if len(cleaned) < 2:
+        raise ValueError("Name must be at least 2 characters long.")
+    return cleaned
+
+
+def _validate_shop_email(value: EmailStr) -> str:
+    domain = str(value).split("@")[-1].lower()
+    if domain not in ALLOWED_EMAIL_DOMAINS:
+        raise ValueError("Email must be a gmail.com or yahoo.com address.")
+    return str(value).strip().lower()
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -23,10 +38,6 @@ EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
 # Optional: used to build a "Log in now" link in emails. Set FRONTEND_URL
 # in the backend's environment variables to your deployed frontend URL.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
-# Where "new update" notification emails (new shop signups, etc.) are
-# sent to the admin. Falls back to ADMIN_EMAIL (the admin login email)
-# if a separate notify address isn't set.
-ADMIN_NOTIFY_EMAIL = os.getenv("ADMIN_NOTIFY_EMAIL") or os.getenv("ADMIN_EMAIL")
 
 
 # ---------- Models ----------
@@ -37,6 +48,9 @@ class ShopIn(BaseModel):
     contact_no: str
     shop_name: str
     shop_address: str
+
+    _validate_owner_name = field_validator("owner_name")(_validate_owner_name)
+    _validate_email_domain = field_validator("email")(_validate_shop_email)
 
 
 class ShopOut(BaseModel):
@@ -58,6 +72,9 @@ class ShopProfileUpdate(BaseModel):
     owner_name: str
     email: EmailStr
     shop_name: str
+
+    _validate_owner_name = field_validator("owner_name")(_validate_owner_name)
+    _validate_email_domain = field_validator("email")(_validate_shop_email)
 
 
 def serialize(doc) -> dict:
@@ -136,35 +153,6 @@ def send_registration_email(to_email: str, owner_name: str, shop_name: str):
     _send_email(to_email, subject, body)
 
 
-def send_admin_new_signup_email(
-    shop_email: str, owner_name: str, shop_name: str, contact_no: str, shop_address: str
-):
-    """Notification email to the ADMIN whenever a new shop signs up and
-    is waiting for approval. Best-effort — never blocks or fails the
-    registration itself if SMTP isn't configured or the send fails."""
-    if not ADMIN_NOTIFY_EMAIL:
-        print("[admin notify skipped - no ADMIN_NOTIFY_EMAIL / ADMIN_EMAIL configured]")
-        return
-
-    signed_up_at = datetime.now(timezone.utc).strftime("%d %b %Y, %I:%M %p UTC")
-    review_line = f"Review it here: {FRONTEND_URL}\n\n" if FRONTEND_URL else ""
-
-    subject = f"🔔 New shop registration: {shop_name}"
-    body = (
-        f"A new shop just signed up and is waiting for your approval.\n\n"
-        f"Shop name:   {shop_name}\n"
-        f"Owner name:  {owner_name}\n"
-        f"Email:       {shop_email}\n"
-        f"Contact no:  {contact_no}\n"
-        f"Address:     {shop_address}\n"
-        f"Signed up:   {signed_up_at}\n\n"
-        f"{review_line}"
-        f"Log in to the admin dashboard to approve or reject this shop.\n\n"
-        f"— Invoice App"
-    )
-    _send_email(ADMIN_NOTIFY_EMAIL, subject, body)
-
-
 def send_approval_email(to_email: str, owner_name: str, shop_name: str, password: str):
     if not EMAIL_ADDRESS or not EMAIL_APP_PASSWORD:
         raise HTTPException(
@@ -238,21 +226,9 @@ async def public_register(shop: ShopIn):
     result = await db.shops.insert_one(doc)
     created = await db.shops.find_one({"_id": result.inserted_id})
 
-    # Best-effort confirmation email to the shop owner — registration
-    # still succeeds even if this fails (e.g. SMTP not configured yet).
+    # Best-effort confirmation email — registration still succeeds even
+    # if this fails (e.g. SMTP not configured yet).
     send_registration_email(shop.email, shop.owner_name, shop.shop_name)
-
-    # Best-effort "new update" notification to the admin, so they know
-    # a new shop is waiting for approval without having to keep checking.
-    send_admin_new_signup_email(
-        shop.email, shop.owner_name, shop.shop_name, shop.contact_no, shop.shop_address
-    )
-    await create_notification(
-        type_="new_shop",
-        title=f"New shop signed up: {shop.shop_name}",
-        message=f"{shop.owner_name} ({shop.email}) is waiting for approval.",
-        meta={"shop_id": str(result.inserted_id), "shop_name": shop.shop_name},
-    )
 
     return serialize(created)
 

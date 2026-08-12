@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../config";
+import { formatToIST } from "../utils/formatDate";
 import "./History.css";
 
 export default function History() {
@@ -98,7 +99,7 @@ export default function History() {
                     </td>
                     <td>₹{getTotal(inv).toFixed(2)}</td>
                     <td className="template-cell">{inv.template}</td>
-                    <td>{new Date(inv.generatedAt).toLocaleString()}</td>
+                    <td>{formatToIST(inv.generatedAt)}</td>
                   </tr>
                 );
               })}

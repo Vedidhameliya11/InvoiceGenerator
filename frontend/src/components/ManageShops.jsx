@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../config";
+import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
 import "./ManageShops.css";
 
 
@@ -49,6 +50,17 @@ export default function ManageShops() {
       alert("Please fill all fields.");
       return false;
     }
+
+    if (!isValidName(formData.owner_name)) {
+      alert(NAME_ERROR);
+      return false;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      alert(EMAIL_ERROR);
+      return false;
+    }
+
     return true;
   };
 

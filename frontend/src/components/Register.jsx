@@ -8,6 +8,8 @@ import MapSearch from "./MapSearch";
 import MapEvents from "./MapEvents";
 import MapResize from "./MapResize";
 
+import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
+
 import "./Register.css";
 
 
@@ -45,6 +47,16 @@ export default function Register({ onRegister, onLoginClick }) {
       !formData.address
     ) {
       alert("Please fill all fields.");
+      return;
+    }
+
+    if (!isValidName(formData.name)) {
+      alert(NAME_ERROR);
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      alert(EMAIL_ERROR);
       return;
     }
 

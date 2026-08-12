@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from invoices import router as invoices_router
@@ -16,8 +18,6 @@ from database import db
 from routes import router as template_router
 from admin_auth import router as admin_router
 from admin_shops import router as admin_shops_router
-from notifications import router as notifications_router
-from announcements import router as announcements_router
 from customers import router as customers_router
 from products import router as products_router
 
@@ -39,11 +39,21 @@ app.add_middleware(
 app.include_router(template_router)
 app.include_router(admin_router)
 app.include_router(admin_shops_router)
-app.include_router(notifications_router)
-app.include_router(announcements_router)
 app.include_router(customers_router)
 app.include_router(products_router)
 app.include_router(invoices_router)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_handler(request: Request, exc: RequestValidationError):
+    """Turns pydantic's default (list-of-objects) validation error into a
+    single readable message, e.g. for the name/email rules on the
+    Register and Edit Profile forms, so the frontend can show it directly."""
+    first_error = exc.errors()[0]
+    message = first_error.get("msg", "Invalid input.")
+    # Pydantic v2 prefixes custom ValueError messages with "Value error, "
+    message = message.replace("Value error, ", "")
+    return JSONResponse(status_code=422, content={"detail": message})
 
 
 class InvoiceItem(BaseModel):

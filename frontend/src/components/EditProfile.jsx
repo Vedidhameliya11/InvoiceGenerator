@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import axios from "axios";
 import { API_BASE } from "../config";
+import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
 import "./EditProfile.css";
 
 export default function EditProfile({ shop, onClose, onUpdated }) {
@@ -56,6 +57,16 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
 
     if (!formData.owner_name.trim() || !formData.email.trim() || !formData.shop_name.trim()) {
       setError("Please fill all fields.");
+      return;
+    }
+
+    if (!isValidName(formData.owner_name)) {
+      setError(NAME_ERROR);
+      return;
+    }
+
+    if (!isValidEmail(formData.email)) {
+      setError(EMAIL_ERROR);
       return;
     }
 
