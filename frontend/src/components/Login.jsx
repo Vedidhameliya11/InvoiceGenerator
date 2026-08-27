@@ -43,9 +43,21 @@ export default function Login({ onLogin, onSignUp }) {
         return;
       }
     } catch (err) {
+      // No response at all (CORS block, network error, backend down)
+      // means we can't reach the API — surface that clearly instead of
+      // silently falling through and later showing a misleading
+      // "Invalid email or password" for what is really a connectivity
+      // problem.
+      if (!err.response) {
+        setLoading(false);
+        setError(
+          "Could not reach the server. Please check your connection and try again."
+        );
+        return;
+      }
       // A non-401 error here means something is actually broken
       // (server down, misconfigured), not just "wrong admin creds".
-      if (err.response && err.response.status !== 401) {
+      if (err.response.status !== 401) {
         setLoading(false);
         setError("Something went wrong. Check that the backend server is running.");
         return;
@@ -66,6 +78,12 @@ export default function Login({ onLogin, onSignUp }) {
       }
     } catch (err) {
       setLoading(false);
+      if (!err.response) {
+        setError(
+          "Could not reach the server. Please check your connection and try again."
+        );
+        return;
+      }
       setError(
         err.response?.data?.detail || "Invalid email or password."
       );

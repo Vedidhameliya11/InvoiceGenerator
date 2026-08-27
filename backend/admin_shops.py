@@ -246,18 +246,21 @@ async def shop_login(payload: ShopLoginIn):
             {"email": {"$regex": f"^{payload.email.strip()}$", "$options": "i"}}
         )
 
-    if not doc or not doc.get("password_hash"):
+    if not doc:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    # Check approval status BEFORE the password hash: a freshly registered
+    # shop has no password_hash yet (it's only created on approval), so
+    # checking that first was masking "still pending" accounts behind a
+    # generic "Invalid email or password" message.
     if doc["status"] != "approved":
         raise HTTPException(
             status_code=403,
             detail="Your account is still pending approval. Please wait for an approval email.",
         )
 
-    if not verify_password(payload.password, doc["password_hash"]):
+    if not doc.get("password_hash") or not verify_password(payload.password, doc["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-
     return {"status": "success", "role": "user", "shop": serialize(doc)}
 
 
