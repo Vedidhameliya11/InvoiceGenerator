@@ -25,8 +25,16 @@ app = FastAPI()
 
 import os
 
-default_origins = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174"
-allowed_origins = os.getenv("ALLOWED_ORIGINS", default_origins).split(",")
+default_origins = (
+    "http://localhost:5173,http://127.0.0.1:5173,"
+    "http://localhost:5174,http://127.0.0.1:5174,"
+    "https://invoice-generator-ozot.vercel.app"
+)
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", default_origins).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,

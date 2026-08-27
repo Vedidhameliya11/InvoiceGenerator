@@ -35,6 +35,7 @@ SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 587
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
+ADMIN_NOTIFY_EMAIL = os.getenv("ADMIN_NOTIFY_EMAIL") or os.getenv("ADMIN_EMAIL")
 # Optional: used to build a "Log in now" link in emails. Set FRONTEND_URL
 # in the backend's environment variables to your deployed frontend URL.
 FRONTEND_URL = os.getenv("FRONTEND_URL", "")
