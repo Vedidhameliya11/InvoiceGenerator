@@ -1,8 +1,10 @@
 import os
+import re
 import secrets
 import string
 import smtplib
 import bcrypt
+from typing import Optional
 from email.mime.text import MIMEText
 
 from fastapi import APIRouter, HTTPException
@@ -36,9 +38,8 @@ SMTP_PORT = 587
 EMAIL_ADDRESS = os.getenv("EMAIL_ADDRESS")
 EMAIL_APP_PASSWORD = os.getenv("EMAIL_APP_PASSWORD")
 ADMIN_NOTIFY_EMAIL = os.getenv("ADMIN_NOTIFY_EMAIL") or os.getenv("ADMIN_EMAIL")
-# Optional: used to build a "Log in now" link in emails. Set FRONTEND_URL
-# in the backend's environment variables to your deployed frontend URL.
-FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+# Deployed frontend URL for emails
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://invoice-generator-ozot.vercel.app")
 
 
 # ---------- Models ----------
@@ -65,7 +66,8 @@ class ShopOut(BaseModel):
 
 
 class ShopLoginIn(BaseModel):
-    email: EmailStr
+    email: Optional[str] = None
+    identifier: Optional[str] = None
     password: str
 
 
@@ -98,22 +100,23 @@ def serialize(doc) -> dict:
 # ---------- Helpers ----------
 
 def generate_password(length: int = 10) -> str:
-    """Generate a random, readable password (letters + digits, at least
-    one of each) for a newly approved shop owner."""
-    alphabet = string.ascii_letters + string.digits
+    """Generate a random, readable password for a newly approved shop owner.
+    Avoids visually ambiguous characters (like 0, O, 1, l, I) so it is
+    easy to read and type accurately from an email."""
+    alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     while True:
         pwd = "".join(secrets.choice(alphabet) for _ in range(length))
-        if any(c.isdigit() for c in pwd) and any(c.isalpha() for c in pwd):
+        if any(c.isdigit() for c in pwd) and any(c.islower() for c in pwd) and any(c.isupper() for c in pwd):
             return pwd
 
 
 def hash_password(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+    return bcrypt.hashpw(plain.strip().encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     try:
-        return bcrypt.checkpw(plain.encode(), hashed.encode())
+        return bcrypt.checkpw(plain.strip().encode("utf-8"), hashed.strip().encode("utf-8"))
     except Exception:
         return False
 
@@ -215,7 +218,17 @@ async def approve_shop_doc(oid: ObjectId) -> dict:
         {"$set": {"status": "approved", "password_hash": hashed}},
     )
 
+    # Also synchronize password_hash to ANY other shop docs with this email
+    # so the candidate can log in without conflicting with previous records
+    email_clean = (doc.get("email") or "").strip().lower()
+    if email_clean:
+        await db.shops.update_many(
+            {"email": {"$regex": f"^{re.escape(email_clean)}$", "$options": "i"}},
+            {"$set": {"status": "approved", "password_hash": hashed}},
+        )
+
     send_approval_email(doc["email"], doc["owner_name"], doc["shop_name"], plain_password)
+    print(f"[SHOP APPROVED] id={oid} email={doc['email']} password={plain_password}")
 
     updated = await db.shops.find_one({"_id": oid})
     return serialize(updated)
@@ -227,10 +240,27 @@ async def approve_shop_doc(oid: ObjectId) -> dict:
 async def public_register(shop: ShopIn):
     """Public endpoint used by the shop-owner Register page. Always
     creates the shop as 'pending' — only an admin approval can promote it."""
+    email_clean = str(shop.email).strip().lower()
+    contact_clean = str(shop.contact_no).strip()
+
     doc = shop.model_dump()
+    doc["owner_name"] = shop.owner_name.strip()
+    doc["email"] = email_clean
+    doc["contact_no"] = contact_clean
+    doc["shop_name"] = shop.shop_name.strip()
+    doc["shop_address"] = shop.shop_address.strip()
     doc["status"] = "pending"
-    result = await db.shops.insert_one(doc)
-    created = await db.shops.find_one({"_id": result.inserted_id})
+
+    existing = await db.shops.find_one(
+        {"email": {"$regex": f"^{re.escape(email_clean)}$", "$options": "i"}}
+    )
+
+    if existing:
+        await db.shops.update_one({"_id": existing["_id"]}, {"$set": doc})
+        created = await db.shops.find_one({"_id": existing["_id"]})
+    else:
+        result = await db.shops.insert_one(doc)
+        created = await db.shops.find_one({"_id": result.inserted_id})
 
     # Best-effort confirmation email — registration still succeeds even
     # if this fails (e.g. SMTP not configured yet).
@@ -241,33 +271,49 @@ async def public_register(shop: ShopIn):
 
 @router.post("/login", response_model=dict)
 async def shop_login(payload: ShopLoginIn):
-    """Real shop-owner login. Checks the email/password against the
-    shop record created at registration + approval time."""
-    doc = await db.shops.find_one({"email": payload.email.strip().lower()})
+    """Real shop-owner login. Checks the identifier (email or mobile) and password
+    against the shop record created at registration + approval time."""
+    ident = (payload.identifier or payload.email or "").strip()
+    pwd = (payload.password or "").strip()
 
-    # Emails are stored as submitted at registration; fall back to a
-    # case-insensitive match if an exact lowercase match isn't found.
-    if not doc:
-        doc = await db.shops.find_one(
-            {"email": {"$regex": f"^{payload.email.strip()}$", "$options": "i"}}
-        )
+    if not ident or not pwd:
+        raise HTTPException(status_code=400, detail="Please fill all fields.")
 
-    if not doc:
+    ident_clean = ident.lower()
+    phone_digits = "".join(c for c in ident if c.isdigit())
+
+    or_conditions = [
+        {"email": {"$regex": f"^{re.escape(ident_clean)}$", "$options": "i"}},
+        {"contact_no": ident},
+    ]
+    if phone_digits:
+        or_conditions.append({"contact_no": phone_digits})
+        if len(phone_digits) == 10:
+            or_conditions.append({"contact_no": f"+91{phone_digits}"})
+            or_conditions.append({"contact_no": f"91{phone_digits}"})
+
+    cursor = db.shops.find({"$or": or_conditions}).sort("_id", -1)
+    matching = [doc async for doc in cursor]
+
+    if not matching:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Check approval status BEFORE the password hash: a freshly registered
-    # shop has no password_hash yet (it's only created on approval), so
-    # checking that first was masking "still pending" accounts behind a
-    # generic "Invalid email or password" message.
-    if doc["status"] != "approved":
+    approved_shops = [s for s in matching if s.get("status") == "approved"]
+
+    if approved_shops:
+        for shop_doc in approved_shops:
+            pwd_hash = shop_doc.get("password_hash")
+            if pwd_hash and verify_password(pwd, pwd_hash):
+                return {"status": "success", "role": "user", "shop": serialize(shop_doc)}
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    if any(s.get("status") == "pending" for s in matching):
         raise HTTPException(
             status_code=403,
             detail="Your account is still pending approval. Please wait for an approval email.",
         )
 
-    if not doc.get("password_hash") or not verify_password(payload.password, doc["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    return {"status": "success", "role": "user", "shop": serialize(doc)}
+    raise HTTPException(status_code=401, detail="Invalid email or password")
 
 
 @router.get("/shops/{shop_id}", response_model=ShopOut)

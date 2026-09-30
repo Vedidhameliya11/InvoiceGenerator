@@ -31,6 +31,47 @@
   box-sizing: border-box;
 }
 
+.login-password-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.login-password-wrap input {
+  margin-bottom: 0;
+  padding-right: 46px;
+}
+
+.login-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.login-password-toggle:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-50%) scale(1.1);
+}
+
+.login-password-toggle:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
 .login-box button[type="submit"] {
   width: 100%;
   padding: 12px;

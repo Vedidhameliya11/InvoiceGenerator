@@ -8,6 +8,7 @@ export default function Login({ onLogin, onSignUp }) {
     identifier: "", // email or mobile number
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +23,10 @@ export default function Login({ onLogin, onSignUp }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.identifier || !formData.password) {
+    const ident = formData.identifier.trim();
+    const pwd = formData.password.trim();
+
+    if (!ident || !pwd) {
       alert("Please fill all fields.");
       return;
     }
@@ -33,8 +37,8 @@ export default function Login({ onLogin, onSignUp }) {
     // 1. Check if these are the admin credentials.
     try {
       const res = await axios.post(`${API_BASE}/admin-login`, {
-        email: formData.identifier,
-        password: formData.password,
+        email: ident,
+        password: pwd,
       });
 
       if (res.data.status === "success") {
@@ -43,11 +47,6 @@ export default function Login({ onLogin, onSignUp }) {
         return;
       }
     } catch (err) {
-      // No response at all (CORS block, network error, backend down)
-      // means we can't reach the API — surface that clearly instead of
-      // silently falling through and later showing a misleading
-      // "Invalid email or password" for what is really a connectivity
-      // problem.
       if (!err.response) {
         setLoading(false);
         setError(
@@ -55,21 +54,19 @@ export default function Login({ onLogin, onSignUp }) {
         );
         return;
       }
-      // A non-401 error here means something is actually broken
-      // (server down, misconfigured), not just "wrong admin creds".
       if (err.response.status !== 401) {
         setLoading(false);
         setError("Something went wrong. Check that the backend server is running.");
         return;
       }
-      // 401 just means "not the admin" — fall through to shop login below.
     }
 
     // 2. Check against real, approved shop accounts.
     try {
       const res = await axios.post(`${API_BASE}/login`, {
-        email: formData.identifier,
-        password: formData.password,
+        identifier: ident,
+        email: ident,
+        password: pwd,
       });
 
       setLoading(false);
@@ -106,16 +103,28 @@ export default function Login({ onLogin, onSignUp }) {
             onChange={handleChange}
           />
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-          />
+          <div className="login-password-wrap">
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            <button
+              type="button"
+              className="login-password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "🐵" : "🙈"}
+            </button>
+          </div>
 
           {error && (
-            <p style={{ color: "#dc2626", fontSize: 14, margin: "4px 0 0" }}>
+            <p style={{ color: "#dc2626", fontSize: 14, margin: "4px 0 12px" }}>
               {error}
             </p>
           )}

@@ -134,8 +134,9 @@ export default function ChangePassword({ shop, onClose }) {
                 onClick={() => setShowCurrent(!showCurrent)}
                 tabIndex={-1}
                 aria-label={showCurrent ? "Hide current password" : "Show current password"}
+                title={showCurrent ? "Hide password" : "Show password"}
               >
-                {showCurrent ? "👁️" : "🙈"}
+                {showCurrent ? "🐵" : "🙈"}
               </button>
             </div>
             {fieldErrors.current && (
@@ -166,8 +167,9 @@ export default function ChangePassword({ shop, onClose }) {
                 onClick={() => setShowNew(!showNew)}
                 tabIndex={-1}
                 aria-label={showNew ? "Hide new password" : "Show new password"}
+                title={showNew ? "Hide password" : "Show password"}
               >
-                {showNew ? "👁️" : "🙈"}
+                {showNew ? "🐵" : "🙈"}
               </button>
             </div>
             {fieldErrors.new && (
@@ -198,8 +200,9 @@ export default function ChangePassword({ shop, onClose }) {
                 onClick={() => setShowConfirm(!showConfirm)}
                 tabIndex={-1}
                 aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                title={showConfirm ? "Hide password" : "Show password"}
               >
-                {showConfirm ? "👁️" : "🙈"}
+                {showConfirm ? "🐵" : "🙈"}
               </button>
             </div>
             {fieldErrors.confirm && (
