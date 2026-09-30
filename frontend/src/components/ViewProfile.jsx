@@ -4,7 +4,7 @@ import axios from "axios";
 import { API_BASE } from "../config";
 import "./EditProfile.css";
 
-export default function ViewProfile({ shop, onClose, onEdit }) {
+export default function ViewProfile({ shop, onClose, onEdit, onChangePassword }) {
   const [details, setDetails] = useState({
     owner_name: shop?.owner_name || "",
     email: shop?.email || "",
@@ -81,6 +81,18 @@ export default function ViewProfile({ shop, onClose, onEdit }) {
               <button type="button" className="edit-profile-cancel" onClick={onClose}>
                 Close
               </button>
+              {onChangePassword && (
+                <button
+                  type="button"
+                  className="edit-profile-pwd-btn"
+                  onClick={() => {
+                    onClose();
+                    onChangePassword();
+                  }}
+                >
+                  🔒 Change Password
+                </button>
+              )}
               <button type="button" className="edit-profile-save" onClick={onEdit}>
                 Edit Profile
               </button>

@@ -1,17 +1,9 @@
 import { useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../config";
-import { MapContainer, TileLayer } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-
-import MapSearch from "./MapSearch";
-import MapEvents from "./MapEvents";
-import MapResize from "./MapResize";
-
-import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
+import { isValidEmail, isValidContact, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
 
 import "./Register.css";
-
 
 export default function Register({ onRegister, onLoginClick }) {
   const [formData, setFormData] = useState({
@@ -22,41 +14,101 @@ export default function Register({ onRegister, onLoginClick }) {
     address: "",
   });
 
-  const [location, setLocation] = useState({
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+
+  const [location] = useState({
     lat: 21.1702,
     lng: 72.8311,
   });
 
   const [submitting, setSubmitting] = useState(false);
 
+  const validateField = (field, value) => {
+    const val = (value || "").trim();
+    switch (field) {
+      case "name":
+        if (!val || val.length < 2) {
+          return "Owner name should have at least 2 characters";
+        }
+        return "";
+      case "email":
+        if (!val) {
+          return "Email is required";
+        }
+        if (!isValidEmail(val)) {
+          return EMAIL_ERROR;
+        }
+        return "";
+      case "contact":
+        if (!val) {
+          return "Contact number is required";
+        }
+        if (!isValidContact(val)) {
+          return "Contact number must be 10 digits";
+        }
+        return "";
+      case "shopName":
+        if (!val) {
+          return "Shop name is required";
+        }
+        if (val.length < 2) {
+          return "Shop name should have at least 2 characters";
+        }
+        return "";
+      case "address":
+        if (!val) {
+          return "Shop address is required";
+        }
+        if (val.length < 3) {
+          return "Shop address should have at least 3 characters";
+        }
+        return "";
+      default:
+        return "";
+    }
+  };
+
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setServerError("");
+    if (errors[name]) {
+      const fieldError = validateField(name, value);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: fieldError,
+      }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    const fieldError = validateField(name, value);
+    setErrors((prev) => ({
+      ...prev,
+      [name]: fieldError,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError("");
 
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.contact ||
-      !formData.shopName ||
-      !formData.address
-    ) {
-      alert("Please fill all fields.");
-      return;
-    }
+    const newErrors = {
+      name: validateField("name", formData.name),
+      email: validateField("email", formData.email),
+      contact: validateField("contact", formData.contact),
+      shopName: validateField("shopName", formData.shopName),
+      address: validateField("address", formData.address),
+    };
 
-    if (!isValidName(formData.name)) {
-      alert(NAME_ERROR);
-      return;
-    }
+    setErrors(newErrors);
 
-    if (!isValidEmail(formData.email)) {
-      alert(EMAIL_ERROR);
+    if (Object.values(newErrors).some((err) => Boolean(err))) {
       return;
     }
 
@@ -64,11 +116,11 @@ export default function Register({ onRegister, onLoginClick }) {
 
     try {
       await axios.post(`${API_BASE}/register`, {
-        owner_name: formData.name,
-        email: formData.email,
-        contact_no: formData.contact,
-        shop_name: formData.shopName,
-        shop_address: formData.address,
+        owner_name: formData.name.trim(),
+        email: formData.email.trim(),
+        contact_no: formData.contact.trim(),
+        shop_name: formData.shopName.trim(),
+        shop_address: formData.address.trim(),
       });
 
       // Keep a local copy too, so PendingApproval / other screens can
@@ -84,10 +136,18 @@ export default function Register({ onRegister, onLoginClick }) {
       if (onRegister) onRegister(true);
     } catch (err) {
       console.error("Registration failed:", err);
-      alert(
-        err.response?.data?.detail ||
-          "Could not submit registration. Check that the backend server is running."
-      );
+      const detail = err.response?.data?.detail;
+      if (detail) {
+        if (detail.toLowerCase().includes("owner name") || detail.toLowerCase().includes("name")) {
+          setErrors((prev) => ({ ...prev, name: detail }));
+        } else if (detail.toLowerCase().includes("email")) {
+          setErrors((prev) => ({ ...prev, email: detail }));
+        } else {
+          setServerError(detail);
+        }
+      } else {
+        setServerError("Could not submit registration. Check that the backend server is running.");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -99,95 +159,76 @@ export default function Register({ onRegister, onLoginClick }) {
 
         <h2>Registration</h2>
 
-        <form onSubmit={handleSubmit}>
+        {serverError && <div className="server-error-banner">{serverError}</div>}
 
-          <input
-            type="text"
-            name="name"
-            placeholder="Owner Name"
-            value={formData.name}
-            onChange={handleChange}
-          />
+        <form onSubmit={handleSubmit} noValidate>
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-          />
-
-          <input
-            type="text"
-            name="contact"
-            placeholder="Contact Number"
-            value={formData.contact}
-            onChange={handleChange}
-          />
-
-          <input
-            type="text"
-            name="shopName"
-            placeholder="Shop Name"
-            value={formData.shopName}
-            onChange={handleChange}
-          />
-
-          <input
-            type="text"
-            name="address"
-            placeholder="Shop Address"
-            value={formData.address}
-            onChange={handleChange}
-          />
-
-          <div className="map-container">
-
-            <MapContainer
-              center={[location.lat, location.lng]}
-              zoom={15}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                attribution="&copy; OpenStreetMap contributors"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-
-              <MapResize />
-
-              <MapSearch
-                onSelect={({ lat, lng }) => setLocation({ lat, lng })}
-              />
-
-              <MapEvents setLocation={setLocation} />
-
-              <MapEvents
-                setLocation={setLocation}
-                setAddress={(address) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    address,
-                  }))
-                }
-              />
-            </MapContainer>
-
-            <div className="center-pin">
-              <svg
-                width="36"
-                height="46"
-                viewBox="0 0 36 46"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 28 18 28s18-14.5 18-28C36 8.06 27.94 0 18 0z"
-                  fill="#EC4899"
-                />
-                <circle cx="18" cy="18" r="7" fill="#ffffff" />
-              </svg>
-            </div>
-
+          <div className="form-group">
+            <input
+              type="text"
+              name="name"
+              placeholder="Owner Name"
+              value={formData.name}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.name ? "input-error" : ""}
+            />
+            {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
+
+          <div className="form-group">
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.email ? "input-error" : ""}
+            />
+            {errors.email && <span className="field-error">{errors.email}</span>}
+          </div>
+
+          <div className="form-group">
+            <input
+              type="tel"
+              name="contact"
+              placeholder="Contact Number (e.g. 9876543210)"
+              value={formData.contact}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.contact ? "input-error" : ""}
+            />
+            {errors.contact && <span className="field-error">{errors.contact}</span>}
+          </div>
+
+          <div className="form-group">
+            <input
+              type="text"
+              name="shopName"
+              placeholder="Shop Name"
+              value={formData.shopName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.shopName ? "input-error" : ""}
+            />
+            {errors.shopName && <span className="field-error">{errors.shopName}</span>}
+          </div>
+
+          <div className="form-group">
+            <input
+              type="text"
+              name="address"
+              placeholder="Shop Address"
+              value={formData.address}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={errors.address ? "input-error" : ""}
+            />
+            {errors.address && <span className="field-error">{errors.address}</span>}
+          </div>
+
+          {/* Google map feature hidden for now */}
 
           <button type="submit" disabled={submitting}>
             {submitting ? "Submitting..." : "Register"}
@@ -209,4 +250,4 @@ export default function Register({ onRegister, onLoginClick }) {
       </div>
     </div>
   );
-}
+}

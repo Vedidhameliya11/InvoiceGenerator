@@ -133,7 +133,7 @@ export default function Login({ onLogin, onSignUp }) {
             className="signup-btn"
             onClick={onSignUp}
           >
-            Sign Up
+            Register
           </button>
         </div>
 

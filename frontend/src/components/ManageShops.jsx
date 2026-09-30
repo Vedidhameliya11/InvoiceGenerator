@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE } from "../config";
-import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
+import { isValidName, isValidEmail, isValidContact, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
 import "./ManageShops.css";
 
 
@@ -40,24 +40,33 @@ export default function ManageShops() {
   };
 
   const validate = () => {
-    if (
-      !formData.owner_name.trim() ||
-      !formData.email.trim() ||
-      !formData.contact_no.trim() ||
-      !formData.shop_name.trim() ||
-      !formData.shop_address.trim()
-    ) {
-      alert("Please fill all fields.");
+    if (!formData.owner_name.trim() || formData.owner_name.trim().length < 2) {
+      alert(NAME_ERROR);
       return false;
     }
 
-    if (!isValidName(formData.owner_name)) {
-      alert(NAME_ERROR);
+    if (!formData.email.trim()) {
+      alert("Email is required.");
       return false;
     }
 
     if (!isValidEmail(formData.email)) {
       alert(EMAIL_ERROR);
+      return false;
+    }
+
+    if (!formData.contact_no.trim() || !isValidContact(formData.contact_no)) {
+      alert("Contact number must be 10 digits.");
+      return false;
+    }
+
+    if (!formData.shop_name.trim()) {
+      alert("Shop name is required.");
+      return false;
+    }
+
+    if (!formData.shop_address.trim()) {
+      alert("Shop address is required.");
       return false;
     }
 
@@ -171,7 +180,7 @@ export default function ManageShops() {
               <input
                 type="text"
                 name="contact_no"
-                placeholder="Enter contact number"
+                placeholder="Contact Number (e.g. 9876543210)"
                 value={formData.contact_no}
                 onChange={handleChange}
               />

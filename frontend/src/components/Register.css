@@ -10,9 +10,9 @@
 
 .register-box {
   width: 100%;
-  max-width: 600px;
+  max-width: 480px;
   background: white;
-  padding: 30px;
+  padding: 32px 30px;
   border-radius: 12px;
   box-shadow: 0 5px 20px rgba(0,0,0,.15);
   box-sizing: border-box;
@@ -20,17 +20,61 @@
 
 .register-box h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
+  color: #1f2937;
+  font-size: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+  text-align: left;
 }
 
 .register-box input {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 15px;
   box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.register-box input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.register-box input.input-error {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.register-box input.input-error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.field-error {
+  display: block;
+  color: #dc2626;
+  font-size: 13px;
+  margin-top: 5px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.server-error-banner {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  padding: 11px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 18px;
+  text-align: left;
+  border: 1px solid #fca5a5;
+  font-weight: 500;
 }
 
 .map-container{
@@ -55,10 +99,18 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
+  margin-top: 6px;
+  transition: background 0.2s;
 }
 
 .register-box button:hover {
   background: #1d4ed8;
+}
+
+.register-box button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 

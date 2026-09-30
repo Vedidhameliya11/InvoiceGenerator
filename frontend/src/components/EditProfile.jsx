@@ -5,7 +5,7 @@ import { API_BASE } from "../config";
 import { isValidName, isValidEmail, NAME_ERROR, EMAIL_ERROR } from "../utils/validators";
 import "./EditProfile.css";
 
-export default function EditProfile({ shop, onClose, onUpdated }) {
+export default function EditProfile({ shop, onClose, onUpdated, onChangePassword }) {
   const [formData, setFormData] = useState({
     owner_name: shop?.owner_name || "",
     email: shop?.email || "",
@@ -55,18 +55,23 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.owner_name.trim() || !formData.email.trim() || !formData.shop_name.trim()) {
-      setError("Please fill all fields.");
+    if (!formData.owner_name.trim() || formData.owner_name.trim().length < 2) {
+      setError(NAME_ERROR);
       return;
     }
 
-    if (!isValidName(formData.owner_name)) {
-      setError(NAME_ERROR);
+    if (!formData.email.trim()) {
+      setError("Email is required.");
       return;
     }
 
     if (!isValidEmail(formData.email)) {
       setError(EMAIL_ERROR);
+      return;
+    }
+
+    if (!formData.shop_name.trim()) {
+      setError("Shop name is required.");
       return;
     }
 
@@ -145,6 +150,18 @@ export default function EditProfile({ shop, onClose, onUpdated }) {
               <button type="button" className="edit-profile-cancel" onClick={onClose}>
                 Close
               </button>
+              {onChangePassword && (
+                <button
+                  type="button"
+                  className="edit-profile-pwd-btn"
+                  onClick={() => {
+                    onClose();
+                    onChangePassword();
+                  }}
+                >
+                  🔒 Change Password
+                </button>
+              )}
               <button type="submit" className="edit-profile-save" disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </button>

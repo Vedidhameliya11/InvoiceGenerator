@@ -150,8 +150,30 @@
   background: #1d4ed8;
 }
 
+.edit-profile-pwd-btn {
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.edit-profile-pwd-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 .edit-profile-save:disabled,
-.edit-profile-cancel:disabled {
+.edit-profile-cancel:disabled,
+.edit-profile-pwd-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

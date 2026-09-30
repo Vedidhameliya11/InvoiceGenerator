@@ -9,6 +9,7 @@ import Templates from "./Templates";
 import ManageShops from "./ManageShops";
 import EditProfile from "./EditProfile";
 import ViewProfile from "./ViewProfile";
+import ChangePassword from "./ChangePassword";
 import NotificationBell from "./NotificationBell";
 import Announcements from "./Announcements";
 import ShopUpdatesBell from "./ShopUpdatesBell";
@@ -22,15 +23,20 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
   // which itself has an "Edit Profile" button that hands off to the form.
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showViewProfile, setShowViewProfile] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const isAdmin = role === "admin";
 
-  // The sidebar has a "profile" item, but Edit Profile is a modal, not a
-  // page — so intercept that one tab and open the modal instead of
-  // switching to a tab that dashboard-content has nothing to render for.
+  // The sidebar has a "profile" item and a "password" item, but Edit Profile
+  // and Change Password are modals, not pages — so intercept those tabs
+  // and open the respective modal instead of switching to a non-existent tab.
   const handleTabChange = (tab) => {
     if (tab === "profile") {
       setShowEditProfile(true);
+      return;
+    }
+    if (tab === "password") {
+      setShowChangePassword(true);
       return;
     }
     setActiveTab(tab);
@@ -81,6 +87,10 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
             setShowViewProfile(false);
             setShowEditProfile(true);
           }}
+          onChangePassword={() => {
+            setShowViewProfile(false);
+            setShowChangePassword(true);
+          }}
         />
       )}
 
@@ -91,6 +101,17 @@ export default function Dashboard({ onLogout, role = "user", shopUser = null, on
           onUpdated={(updated) => {
             if (onShopUpdated) onShopUpdated(updated);
           }}
+          onChangePassword={() => {
+            setShowEditProfile(false);
+            setShowChangePassword(true);
+          }}
+        />
+      )}
+
+      {showChangePassword && !isAdmin && (
+        <ChangePassword
+          shop={shopUser}
+          onClose={() => setShowChangePassword(false)}
         />
       )}
     </div>

@@ -61,6 +61,9 @@ async def validation_error_handler(request: Request, exc: RequestValidationError
     message = first_error.get("msg", "Invalid input.")
     # Pydantic v2 prefixes custom ValueError messages with "Value error, "
     message = message.replace("Value error, ", "")
+    loc = [str(x).lower() for x in first_error.get("loc", [])]
+    if "email" in loc or "value is not a valid email address" in message.lower():
+        message = "Email format invalid"
     return JSONResponse(status_code=422, content={"detail": message})
 
 

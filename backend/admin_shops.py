@@ -21,14 +21,14 @@ ALLOWED_EMAIL_DOMAINS = {"gmail.com", "yahoo.com"}
 def _validate_owner_name(value: str) -> str:
     cleaned = value.strip()
     if len(cleaned) < 2:
-        raise ValueError("Name must be at least 2 characters long.")
+        raise ValueError("Owner name should have at least 2 characters")
     return cleaned
 
 
 def _validate_shop_email(value: EmailStr) -> str:
     domain = str(value).split("@")[-1].lower()
     if domain not in ALLOWED_EMAIL_DOMAINS:
-        raise ValueError("Email must be a gmail.com or yahoo.com address.")
+        raise ValueError("Email format invalid")
     return str(value).strip().lower()
 
 SMTP_HOST = "smtp.gmail.com"
@@ -67,6 +67,11 @@ class ShopOut(BaseModel):
 class ShopLoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str
 
 
 class ShopProfileUpdate(BaseModel):
@@ -317,6 +322,40 @@ async def update_shop_profile(shop_id: str, payload: ShopProfileUpdate):
 
     updated = await db.shops.find_one({"_id": oid})
     return serialize(updated)
+
+
+@router.post("/shops/{shop_id}/change-password")
+async def change_shop_password(shop_id: str, payload: ChangePasswordIn):
+    """Allows an approved shop owner to change their account password."""
+    try:
+        oid = ObjectId(shop_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid shop id")
+
+    doc = await db.shops.find_one({"_id": oid})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Shop not found")
+
+    stored_hash = doc.get("password_hash")
+    if not stored_hash or not verify_password(payload.current_password, stored_hash):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    new_pwd = payload.new_password.strip()
+    if len(new_pwd) < 6:
+        raise HTTPException(
+            status_code=400, detail="New password must be at least 6 characters"
+        )
+
+    if payload.current_password == new_pwd:
+        raise HTTPException(
+            status_code=400,
+            detail="New password cannot be the same as current password",
+        )
+
+    new_hash = hash_password(new_pwd)
+    await db.shops.update_one({"_id": oid}, {"$set": {"password_hash": new_hash}})
+
+    return {"status": "success", "message": "Password changed successfully"}
 
 
 @router.get("/admin/shops", response_model=list[ShopOut])
